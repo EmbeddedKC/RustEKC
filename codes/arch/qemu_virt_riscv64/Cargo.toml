@@ -1,0 +1,17 @@
+[package]
+name = "mmk_arch"
+version = "0.0.1"
+authors = ["Jiaqin Yan <yjq2364728692@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+spin = "0.7.0"
+bitflags = "1.2.1"
+riscv = { git = "https://github.com/rust-embedded/riscv.git"}
+# mmi = { version = "0.1.9", git = "https://github.com/MemoryManagementKernel/mmi_rust.git"}
+mmi = { path= "../../dependency/mmi"}
+[features]
+board_qemu = []
+board_k210 = []
+board_nezha = []

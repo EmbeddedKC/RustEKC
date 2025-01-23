@@ -1,0 +1,20 @@
+[package]
+name = "mmk_arch"
+version = "0.0.1"
+authors = ["Jiaqin Yan <yan2364728692@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+spin = "0.7.0"
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+bitflags = "1.3"
+mmi = { path= "../../dependency/mmi"}
+tock-registers = "0.7"
+cortex-a = "7.0"
+# aarch64-cpu = { git = "https://github.com/rust-embedded/aarch64-cpu.git"}
+
+[features]
+board_qemu = []
+board_k210 = []
+board_nezha = []
+bsp_rpi4 = []
