@@ -20,6 +20,16 @@ AArch64 ISAs environment:
 - target: aarch64-none-elf
 - toolchain: [aarch64-none-elf-gcc-2021.07](https://developer.arm.com/downloads/-/gnu-a/10-3-2021-07)
 
+## Repository structure
+`build` contains all the output files in building RustEKC.
+`codes` contains the source code (Rust) of RustEKC.
+`docs` contains the documentation of RustEKC.
+`lib` contains a small wrapper for EKC API implemented in C, which can be used by payloads.
+`payloads` contains some available binary file of demo payloads. The source code can be found in other repositories of this organization.
+`tools` contains some useful ultilities for testing and evaluating RustEKC.
+
+``
+
 ## Quick start
 
 We provide some compiled payload OS kernel in `payload/` for quick start. If you need to compile the payload yourself or view the source code of the payload, you can find the corresponding repository in this github organization.
@@ -77,7 +87,7 @@ xfel exec 0x40000000
 # execute the code.
 ```
 
-5. To run in Raspberry Pi 4b or K210, some simple fel tools are available in `tools/`. Follow the instruction of `Makefile` in the corresponding fel tools. More details on this tools can be found in `docs/`.
+5. To run in Raspberry Pi 4b or K210, some simple fel tools are available in `tools/`. Follow the instruction of `Makefile` in the corresponding fel tools. More details on this tools can be found in directory `docs`.
 
 ## Ultilize EKC for your own OS kernel
 If you want to apply EKC to your own OS kernel, please follow the steps below:
