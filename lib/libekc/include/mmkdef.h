@@ -1,6 +1,7 @@
 #ifndef _MMKDEF_H_
 #define _MMKDEF_H_
 
+
 ///////////////////////////////////
 /// bitflags
 
@@ -68,6 +69,8 @@
 /// 
 /// the macro below is MMK gate macro definition.
 /// 
+
+#define ENTRY_GATE_ADDRESS -0x1000
 
 #define mmk_call_5(id,arg1,arg2,arg3,arg4,arg5,ret,status) asm volatile( \
 		"ADD SP, SP, #-0xf0 \n\t" \
