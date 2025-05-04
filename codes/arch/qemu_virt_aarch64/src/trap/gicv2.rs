@@ -8,7 +8,7 @@ use tock_registers::registers::{ReadOnly, ReadWrite, WriteOnly};
 
 use crate::mmi::{PhysAddr, VirtAddr};
 use crate::trap::IrqHandlerResult;
-use crate::phys_to_virt_addr;
+use crate::arch_phys_to_virt_addr;
 use lazy_static::*;
 use spin::Mutex;
 
@@ -225,7 +225,7 @@ pub fn handle_irq() -> IrqHandlerResult {
 
 pub fn init() {
     GIC.lock().init(
-        phys_to_virt_addr(GICD_BASE), 
-        phys_to_virt_addr(GICC_BASE)
+        arch_phys_to_virt_addr(GICD_BASE), 
+        arch_phys_to_virt_addr(GICC_BASE)
     );
 }

@@ -1,6 +1,9 @@
-use crate::config::{PAGE_SIZE, PAGE_SIZE_BITS};
 use core::fmt::{self, Debug, Formatter};
 use crate::flags::*;
+
+//temp use - Yan_ice
+const PAGE_SIZE: usize = 4096;
+const PAGE_SIZE_BITS: usize = 12;
 
 /// Definitions
 #[repr(C)]
@@ -51,6 +54,9 @@ impl Debug for PhysPageNum {
 extern "Rust"{
     fn arch_phys_to_virt(pa: PhysAddr) -> VirtAddr;
     fn arch_virt_to_phys(va: VirtAddr) -> PhysAddr;
+
+    fn arch_pagenum_to_addr(ppn: usize) -> usize;
+    fn arch_addr_to_pagenum(ppn: usize) -> usize;
 }
 
 impl From<PhysAddr> for VirtAddr {
@@ -120,7 +126,7 @@ impl VirtAddr {
     pub const fn new(v: usize) -> Self {
         Self(v)
     }
-    pub fn floor(&self) -> VirtPageNum { VirtPageNum(self.0 / PAGE_SIZE) }
+    pub fn floor(&self) -> VirtPageNum { VirtPageNum(arch_addr_to_pagenum(self.0)) }
     pub fn ceil(&self) -> VirtPageNum  { VirtPageNum((self.0 - 1 + PAGE_SIZE) / PAGE_SIZE) }
     pub fn page_offset(&self) -> usize { self.0 & (PAGE_SIZE - 1) }
     pub fn aligned(&self) -> bool { self.page_offset() == 0 }

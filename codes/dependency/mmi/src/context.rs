@@ -1,4 +1,3 @@
-use crate::config::*;
 
 #[repr(C)]
 pub struct ProxyContext{
@@ -47,28 +46,3 @@ pub struct ConfigData{
     pub allocator_end: usize
     //end address of outer allocator.
 }
-
-pub fn PROXYCONTEXT() -> &'static mut ProxyContext{
-    unsafe{ 
-        &mut *(crate::PROXY_CONTEXT as usize 
-        as *mut usize 
-        as *mut ProxyContext) 
-    }
-}
-
-pub fn CONFIGDATA() -> &'static mut ConfigData{
-    unsafe{ 
-        &mut *(crate::CONFIG_DATA as usize 
-        as *mut usize 
-        as *mut ConfigData) 
-    }
-}
-
-pub fn MMK_API(id: usize) -> *mut usize{
-    if id >= 128 {
-        panic!("receive an illegal mmk api id.");
-    }
-    let addr = (crate::MMKAPI_TABLE + id*8) as *mut usize;
-    return addr;
-}
-

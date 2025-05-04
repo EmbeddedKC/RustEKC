@@ -1,5 +1,4 @@
 use alloc::sync::Arc;
-use mmi::nkapi_alloc;
 use alloc::format;
 use crate::service::register_mmkapi;
 use crate::{debug_warn, debug_info, 

@@ -7,7 +7,6 @@ use cortex_a::registers::{CNTFRQ_EL0, CNTPCT_EL0, CNTP_CTL_EL0, CNTP_TVAL_EL0};
 use cortex_a::registers::VBAR_EL1;
 
 use tock_registers::interfaces::{Readable, Writeable};
-use mmi::{CONFIGDATA, PROXYCONTEXT, PROXY_CONTEXT, TRAMPOLINE};
 use crate::config::*;
 use crate::arch_debug_info;
 use spin::Mutex;
@@ -121,12 +120,6 @@ pub fn init(){
     //gicv2::init();
     //gicv2::irq_set_mask(PHYS_TIMER_IRQ_NUM, false);
     arch_debug_info!("trap init success.");
-    // unsafe {
-	// let cfg = CONFIGDATA();
-    //     cfg.kernel_trap_handler = default_delegate as usize;
-	//     stvec::write(TRAMPOLINE-(__alltraps as usize)+(_ktrap as usize), stvec::TrapMode::Direct);
-    //     PROXYCONTEXT().__deleted = TRAMPOLINE - __alltraps as usize + __restore as usize;
-    
-    // }
+
 }
 

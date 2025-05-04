@@ -1,6 +1,6 @@
 use mmi::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
 use mmi::MapPermission;
-use mmi::PAGE_SIZE;
+use crate::config::*;
 
 // bitflags! {
 //     pub struct PTEFlags: u16 {

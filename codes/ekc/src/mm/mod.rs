@@ -22,6 +22,8 @@ use page_table::*;
 use mmk_arch::pte::*;
 use super::trap::nk_trap_handler;
 use crate::mmi::*;
+use crate::config::*;
+
 use crate::*;
 pub use frame_allocator::{
     StackFrameAllocator, 
@@ -48,7 +50,7 @@ extern "C" {
 }
 
 pub fn get_pte_array(pa: PhysAddr) -> &'static mut [PageTableEntry] {
-    let va: VirtAddr = arch_phys_to_virt(pa);
+    let va: VirtAddr = pa.into();
     unsafe {
         core::slice::from_raw_parts_mut(va.0 as *mut PageTableEntry, 512)
     }
@@ -128,7 +130,7 @@ fn check_valid(owner: u8, ppn: PhysPageNum, perm: MapPermission) -> bool{
     //TODO: currently skip checking,
     
     //NK SPACE can never be access.
-    if ppn.0 >= NKSPACE_START<<12 && ppn.0 < NKSPACE_END<<12{
+    if ppn.0 >= NKSPACE_START && ppn.0 < NKSPACE_END{
         debug_error!("No permission to access nk space {:x}", ppn.0);
         return false;
     }
@@ -284,8 +286,8 @@ nkapi!{
                 if state1 == 0 && state2 == 0 {
                     unsafe {
                         for offset2 in 0..512 {
-                            let src_addr = ((src_ppn<<12) + offset2*8) as *const u64;
-                            let dst_addr = ((dst_ppn<<12) + offset2*8) as *mut u64;
+                            let src_addr = ((src_ppn<<PAGE_SIZE_BITS) + offset2*8) as *const u64;
+                            let dst_addr = ((dst_ppn<<PAGE_SIZE_BITS) + offset2*8) as *mut u64;
                             *dst_addr = *src_addr;
                         }
                     }

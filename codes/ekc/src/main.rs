@@ -9,16 +9,18 @@ extern crate alloc;
 extern crate bitflags;
 extern crate mmi;
 
+mod api;
 #[macro_use]
 mod console;
 mod mm;  
 mod trap;
 mod service;
+mod config;
 
 
 pub use console::*;
-use crate::mmi::config::*;
-use crate::mmk_arch::config::*;
+pub use api::*;
+pub use crate::config::*;
 
 use crate::mmi::*; 
 use crate::mmk_arch::*;

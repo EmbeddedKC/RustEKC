@@ -4,7 +4,6 @@ use super::{
 };
 use crate::{debug_warn, debug_info};
 use crate::mmi::*;
-use mmi::PAGE_SIZE;
 use alloc::{vec::Vec, boxed::Box};
 use bitflags::*;
 use mm::outer_frame_dealloc;

@@ -11,7 +11,7 @@ pub mod aescbc;
 //#[cfg(feature = "measure")]
 pub mod measure;
 
-use crate::context::MMK_API;
+use crate::config::MMK_API;
 
 pub fn service_init(){
 

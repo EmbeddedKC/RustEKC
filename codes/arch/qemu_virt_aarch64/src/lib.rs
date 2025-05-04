@@ -9,6 +9,9 @@ mod trap;
 pub mod pte;
 mod entry;
 
+#[macro_use]
+pub mod gate;
+
 pub mod config;
 use core::fmt::{self, Write};
 use core::arch::global_asm;
@@ -30,7 +33,7 @@ pub use util::pl011::console_getchar as arch_getchar;
 pub use util::console::print as arch_print;
 pub use util::psci::shutdown as arch_shutdown;
 pub use util::console::print_raw;
-pub use config::arch_phys_to_virt as arch_phys_to_virt;
+pub use config::arch_phys_to_virt_addr as arch_phys_to_virt_addr;
 pub use config::arch_virt_to_phys as arch_virt_to_phys;
 
 #[no_mangle]
@@ -118,7 +121,7 @@ pub fn arch_final_init() -> usize{
     unsafe{
         core::arch::asm!("BR x28", 
         //in("x31") nk_exit as usize,
-        in("x28") mmi::config::NK_TRAMPOLINE - nk_gate as usize + nk_exit as usize,
+        in("x28") crate::config::NK_TRAMPOLINE - nk_gate as usize + nk_exit as usize,
         in("x0") 0 );
         panic!("not reachable");
     }

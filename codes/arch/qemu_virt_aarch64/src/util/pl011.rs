@@ -10,7 +10,7 @@ use crate::config::*;
 
 const UART_BASE: PhysAddr = PhysAddr{0: 0x0900_0000};
 
-static UART: Mutex<Pl011Uart> = Mutex::new(Pl011Uart::new(phys_to_virt_addr(UART_BASE)));
+static UART: Mutex<Pl011Uart> = Mutex::new(Pl011Uart::new(arch_phys_to_virt_addr(UART_BASE)));
 
 register_structs! {
     Pl011UartRegs {

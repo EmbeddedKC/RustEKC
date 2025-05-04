@@ -1,5 +1,4 @@
 use alloc::sync::Arc;
-use mmi::nkapi_alloc;
 use alloc::format;
 use tiny_keccak::{Sha3, Hasher};
 
@@ -76,7 +75,7 @@ nkapi!{
 pub fn append(data_ptr: usize, data_len: usize) -> usize{
 
     unsafe{
-        if(arch_phys_to_virt(data_ptr.into()).0 < NKSPACE_END){
+        if(arch_phys_to_virt_addr(data_ptr.into()).0 < NKSPACE_END){
             return 0;
         }
         let mut current: usize = *(LOG_BASE_ADDRESS as *mut usize);
@@ -90,7 +89,7 @@ pub fn append(data_ptr: usize, data_len: usize) -> usize{
 }
 
 pub fn getall(out_buf: usize, mut size: usize) -> usize{
-    if(arch_phys_to_virt(out_buf.into()).0 < NKSPACE_END){
+    if(arch_phys_to_virt_addr(out_buf.into()).0 < NKSPACE_END){
         return 0;
     }
     
@@ -124,7 +123,7 @@ pub fn printall(){
 }
 
 pub fn gethash(out_ptr: usize){
-    if(arch_phys_to_virt(out_ptr.into()).0 < NKSPACE_END){
+    if(arch_phys_to_virt_addr(out_ptr.into()).0 < NKSPACE_END){
         return;
     }
     let mut hasher = Sha3::v256();

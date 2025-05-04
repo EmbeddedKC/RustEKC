@@ -4,7 +4,7 @@ pub use crate::mmi::*;
 
 // used by mmi. (extern "C")
 #[no_mangle]
-pub const fn arch_phys_to_virt(pa: PhysAddr) -> VirtAddr {
+pub const fn arch_phys_to_virt_addr(pa: PhysAddr) -> VirtAddr {
     VirtAddr{0: pa.0}
 }
 

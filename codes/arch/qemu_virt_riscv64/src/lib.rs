@@ -28,7 +28,7 @@ pub use util::sbi::console_putchar as arch_putchar;
 pub use util::sbi::console_getchar as arch_getchar;
 pub use util::sbi::shutdown as arch_shutdown;
 pub use util::console::print as arch_print;
-pub use config::arch_phys_to_virt as arch_phys_to_virt;
+pub use config::arch_phys_to_virt_addr as arch_phys_to_virt_addr;
 pub use config::arch_virt_to_phys as arch_virt_to_phys;
 
 pub use trap::TrapContext;

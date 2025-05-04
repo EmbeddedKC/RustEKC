@@ -6,11 +6,13 @@ export cwd := $(shell pwd)
 export MODE ?= debug
 export PAYLOAD ?= $(cwd)/payloads/freertos_blinky_qemu_aarch64.bin
 
+# export BARD ?= qemu_virt_arm
 # export BOARD ?= qemu_virt_riscv64
 # export BOARD ?= allwinner_D1H
 export BOARD ?= qemu_virt_aarch64
 # export BOARD ?= raspberry_pi4
 
+# export TARGET = arm-none-eabi
 export TARGET = aarch64-unknown-none
 # export TARGET = riscv64gc-unknown-none-elf
 
@@ -29,10 +31,10 @@ export PAYLOAD_BIN := $(PAYLOAD)
 	
 all: run
 
-run: build $(PAYLOAD_BIN)
+run: $(MMK_BIN) $(PAYLOAD_BIN)
 	cd $(ARCH_PATH) && sudo sh run.sh $(MMK_BIN) $(PAYLOAD_BIN)
 
-build:
+$(MMK_BIN):
 	mkdir -p $(BUILD_PATH) 
 	cd $(SRC_PATH) && make build
 
@@ -44,13 +46,14 @@ env:
 rudra:
 	cd $(SRC_PATH) && make rudra
 
-test:	build_mmk
+test: $(MMK_BIN)
 	cd $(SRC_PATH) && make tmp_run
 
-debug:	build_mmk
+debug: $(MMK_BIN)
 	cd $(SRC_PATH) && make tmp_debug
 
 clean:
+	rm -f $(MMK_BIN)
 	cd $(SRC_PATH) && make clean
 	cd $(PAYLOAD_PATH) && make clean
 

@@ -11,11 +11,11 @@ use tock_registers::{
     registers::ReadWrite,
 };
 use spin::Mutex;
-use crate::phys_to_virt_addr;
+use crate::arch_phys_to_virt_addr;
 use crate::PhysAddr;
 
 const GPIO_BASE: PhysAddr = PhysAddr{0: 0xFE200000};
-static gpio_instance: Mutex<GPIO> = Mutex::new(GPIO::new(phys_to_virt_addr(GPIO_BASE).0));
+static gpio_instance: Mutex<GPIO> = Mutex::new(GPIO::new(arch_phys_to_virt_addr(GPIO_BASE).0));
 
 use super::common::MMIODerefWrapper;
 

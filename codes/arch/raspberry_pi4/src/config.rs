@@ -6,7 +6,7 @@ pub const BOOT_KERNEL_STACK_SIZE: usize = 4096 * 16; // 16K
 
 // used by mmi. (extern "C")
 #[no_mangle]
-pub const fn arch_phys_to_virt(pa: PhysAddr) -> VirtAddr {
+pub const fn arch_phys_to_virt_addr(pa: PhysAddr) -> VirtAddr {
     VirtAddr{0: pa.0 | 0xffff_0000_0000_0000}
 }
 
@@ -45,25 +45,25 @@ pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 2;
 
 pub const KERNEL_HEAP_SIZE: usize = PAGE_SIZE * 0x200;
 
-pub const NKSPACE_START: usize = phys_to_virt(0x0080000); //0xffff000000080000
+pub const NKSPACE_START: usize = arch_phys_to_virt(0x0080000); //0xffff000000080000
 
-pub const NKSPACE_END: usize = phys_to_virt(0x0480000);
+pub const NKSPACE_END: usize = arch_phys_to_virt(0x0480000);
 
-pub const OKSPACE_START: usize = phys_to_virt(0x0480000);
+pub const OKSPACE_START: usize = arch_phys_to_virt(0x0480000);
 
-pub const OKSPACE_END: usize = phys_to_virt(0x0680000);
+pub const OKSPACE_END: usize = arch_phys_to_virt(0x0680000);
 
 pub const CLOCK_FREQ: usize = 24000000;
 
 pub const MMU_MAX_LEVEL: usize = 4;
 //3: SV39.   4: SV48.   5: SV57.
 
-pub const fn phys_to_virt(phys: usize) -> usize {
+pub const fn arch_phys_to_virt(phys: usize) -> usize {
     return (phys | 0xffff_0000_0000_0000);
     //return phys
 }
 
-pub const fn phys_to_virt_addr(phys: PhysAddr) -> VirtAddr {
+pub const fn arch_phys_to_virt_addr(phys: PhysAddr) -> VirtAddr {
     return VirtAddr{0: phys.0 | 0xffff_0000_0000_0000};
     //return VirtAddr{0: phys.0};
 }
