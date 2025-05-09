@@ -381,6 +381,6 @@
 
 	chosen {
 		stdout-path = "/pl011@9000000";
-		kaslr-seed = <0xf37384f 0x8549675f>;
+		kaslr-seed = <0xac12bab6 0x5e5f7acd>;
 	};
 };

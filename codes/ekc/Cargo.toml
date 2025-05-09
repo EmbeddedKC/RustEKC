@@ -29,4 +29,4 @@ rs_sha256 = "0.1.*"
 # Makefile will generate another line like:
 # mmk_arch = {path = "...."}
 
-mmk_arch = {path = "../arch/qemu_virt_aarch64"}
+mmk_arch = {path = "../arch/qemu_virt_arm"}

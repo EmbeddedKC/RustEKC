@@ -86,22 +86,27 @@ impl MemorySet {
     }
 
     pub fn map_range(&mut self, begin: VirtPageNum, end: VirtPageNum, map_perm: MapPermission) {
-        debug_info!("range: {:?}, {:?}",begin, end);
         let mut ptr: usize = begin.0;
         while ptr < end.0 {
-            for level in (0..3).rev() {
-                if level == 0{
-                    self.page_table.map(ptr.into(), ptr.into(), map_perm);
-                    ptr = ptr + 1;
-                }else{
-                    let size = 1 << 9*level;
-                    if ptr & size-1 == 0 && ptr + size <= end.0{
-                        self.page_table.map_huge(ptr.into(), ptr.into(), map_perm, level);
-                        ptr = ptr + size;
-                        break;
-                    }
-                }
-            }
+            
+            //Yan-ice: no huge map
+            self.page_table.map(ptr.into(), ptr.into(), map_perm);
+            ptr = ptr + 1;
+
+            //Yan-ice: huge map
+            // for level in (0..3).rev() {
+            //     if level == 0{
+            //         self.page_table.map(ptr.into(), ptr.into(), map_perm);
+            //         ptr = ptr + 1;
+            //     }else{
+            //         let size = 1 << 9*level;
+            //         if ptr & size-1 == 0 && ptr + size <= end.0{
+            //             self.page_table.map_huge(ptr.into(), ptr.into(), map_perm, level);
+            //             ptr = ptr + size;
+            //             break;
+            //         }
+            //     }
+            // }
             
         }
     }
@@ -114,9 +119,6 @@ impl MemorySet {
     pub fn new_kernel() -> Self {
         //let mut memory_set = Self::new_bare(0xff);
         let mut memory_set = Self::new_bare(0);
-
-        // map trampoline
-        memory_set.map_trampoline();  //映射trampoline
 
         // debug_info!("mapping .text section: {:x} {:x}",stext as usize, etext as usize);
         // memory_set.map_range(
@@ -149,21 +151,21 @@ impl MemorySet {
         //     MapPermission::R | MapPermission::W,
         // );
 
-        debug_info!("mapping mmk space: {:x} {:x}",stext as usize, NKSPACE_END as usize);
+        //debug_info!("mapping mmk space: {:x} {:x}",stext as usize, NKSPACE_END as usize);
         memory_set.map_range(
             VirtAddr::from(stext as usize).into(),
             VirtAddr::from(NKSPACE_END as usize).into(),
             MapPermission::R | MapPermission::X | MapPermission::W
         );
 
-        debug_info!("mapping outer kernel space: {:x}",OKSPACE_START);
+        //debug_info!("mapping outer kernel space: {:x}",OKSPACE_START);
         memory_set.map_range(
             VirtAddr::from(OKSPACE_START).into(),
             VirtAddr::from(OKSPACE_END).into(),
-            MapPermission::R | MapPermission::W | MapPermission::X ,
+            MapPermission::R | MapPermission::W | MapPermission::X
         );
 
-        debug_info!("mapping memory-mapped registers");
+        //debug_info!("mapping memory-mapped registers");
         for pair in MMIO {  // 这里是config硬编码的管脚地址
             memory_set.map_range(
                 VirtAddr::from((*pair).0).into(),
@@ -173,6 +175,9 @@ impl MemorySet {
             // memory_set.page_table.map((*pair).0.into(), (*pair).0.into(), 
             //     MapPermission::R | MapPermission::W | MapPermission::X)
         }
+
+        // map trampoline
+        memory_set.map_trampoline();  //映射trampoline
 
         debug_info!("MMK page table init.");
 

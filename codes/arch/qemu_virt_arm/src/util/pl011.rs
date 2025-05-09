@@ -7,10 +7,15 @@ use tock_registers::registers::{ReadOnly, ReadWrite};
 use crate::mmi::{PhysAddr, VirtAddr};
 use spin::Mutex;
 use crate::config::*;
+use lazy_static::lazy_static;
 
 const UART_BASE: PhysAddr = PhysAddr{0: 0x0900_0000};
 
-static UART: Mutex<Pl011Uart> = Mutex::new(Pl011Uart::new(arch_phys_to_virt_addr(UART_BASE)));
+//static UART: Mutex<Pl011Uart> = Mutex::new(Pl011Uart::new(arch_phys_to_virt_addr(UART_BASE)));
+
+lazy_static! {
+    static ref UART: Pl011Uart = Pl011Uart::new(arch_phys_to_virt_addr(UART_BASE));
+}
 
 register_structs! {
     Pl011UartRegs {
@@ -51,9 +56,9 @@ impl Pl011Uart {
 }
 
 pub fn console_putchar(c: usize) {
-    UART.lock().putchar(c as u8);
+    UART.putchar(c as u8);
 }
 
 pub fn console_getchar() -> Option<u8> {
-    UART.lock().getchar()
+    UART.getchar()
 }

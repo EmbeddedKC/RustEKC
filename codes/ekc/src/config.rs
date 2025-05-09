@@ -20,6 +20,7 @@ pub fn CONFIGDATA() -> &'static mut ConfigData{
     }
 }
 
+//MMK API always need 8 byte per address
 pub fn MMK_API(id: usize) -> *mut usize{
 
     let _MMKAPI_TABLE: usize = METADATA_PAGE + 0x800;

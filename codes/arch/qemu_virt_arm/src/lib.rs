@@ -9,11 +9,14 @@ mod trap;
 pub mod pte;
 mod entry;
 
+#[macro_use]
+pub mod gate;
+
 pub mod config;
 use core::fmt::{self, Write};
 use core::arch::global_asm;
 //global_asm!(include_str!("entry.asm"));
-global_asm!(include_str!("top.S"));
+//global_asm!(include_str!("top.S"));
 
 pub use config::*;
 pub use pte::*;
@@ -30,12 +33,12 @@ pub use util::pl011::console_getchar as arch_getchar;
 pub use util::console::print as arch_print;
 pub use util::psci::shutdown as arch_shutdown;
 pub use util::console::print_raw;
-pub use config::arch_phys_to_virt_addr as arch_phys_to_virt_addr;
+pub use config::arch_phys_to_virt as arch_phys_to_virt;
 pub use config::arch_virt_to_phys as arch_virt_to_phys;
 
 #[no_mangle]
 pub fn t_breakpoint(){
-    arch_debug_info!("breakpoint");
+    print_raw("breakpoint");
     panic!("breakpoint reached.");
 }
 
@@ -60,7 +63,9 @@ pub fn arch_get_root_pt(pt_id: usize, ppn: PhysPageNum) -> usize{
 pub fn arch_set_root_pt(pt_id: usize, ppn: PhysPageNum){
     let token: usize =  PhysAddr::from(ppn).0;
     unsafe {
-        core::arch::asm!("MCR p15, 0, r8, c2, c0, 0", 
+        core::arch::asm!(
+            "MCR p15, 0, r8, c2, c0, 0; 
+            MCR p15, 0, r8, c2, c0, 1", 
                         in("r8") token);
     }
     //arch_flush_tlb(pt_id);
@@ -117,6 +122,7 @@ pub fn arch_early_init() -> usize{
     trap::init();
 
     print_raw("arch: qemu_virt_arm32.\n");
+    
     0
 }
 
@@ -126,12 +132,12 @@ pub fn arch_early_init() -> usize{
 pub fn arch_final_init() -> usize{
     
     //util::init();
-    arch_debug_info!("Ready jump to payload.");
+    print_raw("Ready jump to payload.");
     
     unsafe{
         core::arch::asm!("BX r8", 
         //in("x31") nk_exit as usize,
-        in("r8") mmi::config::NK_TRAMPOLINE - nk_gate as usize + nk_exit as usize,
+        in("r8") config::NK_TRAMPOLINE - nk_gate as usize + nk_exit as usize,
         in("r0") 0 );
         panic!("not reachable");
     }
@@ -146,11 +152,11 @@ pub fn arch_scan_instruction(pa: PhysAddr) {
             let opcode = data[instruction] & 0b1111111;
             if opcode == 0x73 {
                 if csr == 0x180 {
-                    arch_debug_info!("modify satp instruction found in 0x{:x}. Removed.",pa.0);
+                    //debug_info!("modify satp instruction found in 0x{:x}. Removed.",pa.0);
                     data[instruction] = 0b0010011; //addi zero, zero, 0
                     
                 }else if csr == 0x105 {
-                    arch_debug_info!("modify stvec instruction found in 0x{:x}. Removed.",pa.0);
+                    //debug_info!("modify stvec instruction found in 0x{:x}. Removed.",pa.0);
                     data[instruction] = 0b0010011; //addi zero, zero, 0
                     
                 }
@@ -160,13 +166,13 @@ pub fn arch_scan_instruction(pa: PhysAddr) {
     
     let time_end: usize = arch_get_cpu_time();
 
-    arch_debug_info!("instruction scan time: {}", time_end - time_start);
+    //debug_info!("instruction scan time: {}", time_end - time_start);
     // TODO: not implemented yet.
     // currently only implemented for risc-v
 }
 
 pub fn arch_barrier() {
     unsafe{
-        core::arch::asm!("dsb sy; isb;")
+        core::arch::asm!("dsb; isb;")
     }
 }

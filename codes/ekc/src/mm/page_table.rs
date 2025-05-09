@@ -1,6 +1,6 @@
 
 use super::{
-    frame_alloc, frame_dealloc, VirtAddr, PhysAddr, PhysPageNum, PageTableEntry
+    frame_alloc_multiple, frame_dealloc_multiple, frame_alloc, frame_dealloc, VirtAddr, PhysAddr, PhysPageNum, PageTableEntry
 };
 use crate::{debug_warn, debug_info};
 use crate::mmi::*;
@@ -10,6 +10,7 @@ use mm::outer_frame_dealloc;
 use crate::mm::get_pte_array;
 use spin::Mutex;
 use crate::*;
+use crate::config::*;
 
 #[derive(Copy, Clone)]
 pub struct PageTable {
@@ -37,6 +38,7 @@ pub struct PageTable {
     }
 
 
+
 pub struct PageTableRecord {
     pub pt_id: usize,
     pub root_ppn: PhysPageNum,
@@ -61,6 +63,17 @@ impl From<&mut PageTableRecord> for PageTable{
     }
 }
 
+fn vpn_indexes(vpns: VirtPageNum) -> VpnIndexes {
+    let mut vpn = vpns.0;
+    let mut idx: VpnIndexes = MMU_PAGEWALK;
+    for i in 0..idx.len(){
+        let bitwid = idx[i];
+        idx[i] = vpn & (1<<bitwid) - 1;
+        vpn >>= bitwid;
+    }
+    idx
+}
+
 /// Assume that it won't oom when creating/mapping.
 impl PageTableRecord {
     pub fn id(&self) -> usize{
@@ -68,7 +81,9 @@ impl PageTableRecord {
     }
     
     pub fn new(id: usize) -> Self {
-        let ppn = frame_alloc().unwrap();
+
+        let pt_siz = MMU_PAGETABLE_SIZE[MMU_PAGETABLE_SIZE.len()-1];
+        let ppn = frame_alloc_multiple(pt_siz/PAGE_SIZE).unwrap();
 
         PageTableRecord {
             pt_id: id,
@@ -85,29 +100,32 @@ impl PageTableRecord {
             //dealloc page table
         }
 
-        frame_dealloc(self.root_ppn);//dealloc root
+        let pt_siz = MMU_PAGETABLE_SIZE[MMU_PAGETABLE_SIZE.len()-1];
+        frame_dealloc_multiple(self.root_ppn, pt_siz/PAGE_SIZE);//dealloc root
         self.pt_id = usize::MAX;
         self.root_ppn = 0.into();
     }
 
     fn find_pte_create(&mut self, vpn: VirtPageNum) -> &mut PageTableEntry {
-        self.find_pte_create_level(vpn, MMU_MAX_LEVEL)
+        self.find_pte_create_level(vpn, MMU_PAGEWALK.len())
     }
     pub fn find_pte(&self, vpn: VirtPageNum) -> Option<&mut PageTableEntry> {
-        self.find_pte_level(vpn, MMU_MAX_LEVEL)
+        self.find_pte_level(vpn, MMU_PAGEWALK.len())
     }
 
     // level = {1,2,3}, 1 is the highest.
-    pub fn find_pte_level(&self, vpn:VirtPageNum, level:usize) -> Option<&mut PageTableEntry> {
-        let idxs = vpn.indexes();
+    pub fn find_pte_level(&self, vpn:VirtPageNum, level: usize) -> Option<&mut PageTableEntry> {
+        let idxs = vpn_indexes(vpn);
+        let max_level = idxs.len();
+
         let mut pa = self.root_ppn.into();
         let mut result: Option<&mut PageTableEntry> = None;
-        for i in ((MMU_MAX_LEVEL-level)..MMU_MAX_LEVEL).rev() {
+        for i in ((max_level-level)..max_level).rev() {
             if i == 4 {
                 panic!("i = 4.");
             }
-            let pte = &mut get_pte_array(pa)[idxs[i]];
-            if i == (MMU_MAX_LEVEL-level) {
+            let pte = &mut get_pte_array(pa,1<<MMU_PAGEWALK[i])[idxs[i]];
+            if i == (max_level-level) {
                 result = Some(pte);
                 break;
             }
@@ -125,25 +143,30 @@ impl PageTableRecord {
     }
 
     pub fn find_pte_create_level(&mut self, vpn:VirtPageNum, level:usize) -> &mut PageTableEntry {
-        let idxs = vpn.indexes();
-        let mut pa: PhysAddr = self.root_ppn.into();
+        let idxs = vpn_indexes(vpn);
+        let max_level = idxs.len();
 
-        let mut pte: &mut PageTableEntry = &mut get_pte_array(pa)[idxs[0]];
+        let mut pa: PhysAddr = self.root_ppn.into();
         
-        for i in ((MMU_MAX_LEVEL-level)..MMU_MAX_LEVEL).rev() {
+        for i in ((max_level-level)..max_level).rev() {
             if i == 4 {
                 panic!("i = 4.");
             }
-            pte = &mut get_pte_array(pa)[idxs[i]];
-            if i == (MMU_MAX_LEVEL-level) {
+            let pte = &mut get_pte_array(pa,1<<MMU_PAGEWALK[i])[idxs[i]];
+            if i == (max_level-level) {
                 return pte;
                 break;
             }
             if !pte_is_valid(pte) {
-                let ppn = frame_alloc().unwrap();
+                let pagetable_size: usize = MMU_PAGETABLE_SIZE[i-1];
+                let ppn = frame_alloc_multiple(pagetable_size/PAGE_SIZE).unwrap();
 
                 *pte = PageTableEntry::new_table(ppn.into());
-                self.frames.push(ppn);
+
+                for a in 0..pagetable_size/PAGE_SIZE {
+                    self.frames.push((ppn.0 + a).into());
+                }
+                
                 
             }
             // if pte_is_block(pte) {
@@ -162,15 +185,17 @@ impl PageTableRecord {
     pub fn trace_address(&self, va: VirtAddr){
         let vpn = va.floor();
 
-        let idxs = vpn.indexes();
+        let idxs = vpn_indexes(vpn);
+        let max_level = idxs.len();
+
         let mut pa: PhysAddr = self.root_ppn.into();
         let mut result: Option<&PageTableEntry> = None;
         print!("root pt address is {:x}. ",pa.0);
 
         print!("Tracing translation for {:?}:\n",va);
         
-        for i in (0..MMU_MAX_LEVEL).rev() {
-            let pte = &get_pte_array(pa)[idxs[i]];
+        for i in (0..max_level).rev() {
+            let pte = &get_pte_array(pa,1<<MMU_PAGEWALK[i])[idxs[i]];
             print!("==> finding next pte from pa={:x}, index={:x}.\n", pa.0, idxs[i]);
             if !pte_is_valid(pte) {
                 print!("INVALID\n");
@@ -198,18 +223,18 @@ impl PageTableRecord {
     
     #[allow(unused)]
     pub fn map(&mut self, vpn: VirtPageNum, ppn: PhysPageNum, flags: MapPermission) {
-        let pte = self.find_pte_create_level(vpn, MMU_MAX_LEVEL);
+        let pte = self.find_pte_create_level(vpn, MMU_PAGEWALK.len());
         *pte = PageTableEntry::new_page(ppn.into(), flags, false);
         //debug_info!("mapping {:?}",vpn);
     }
 
     #[allow(unused)]
     pub fn map_huge(&mut self, vpn: VirtPageNum, ppn: PhysPageNum, flags: MapPermission, level: usize) {
-        assert!(level > 0 && level < MMU_MAX_LEVEL);
+        assert!(level > 0 && level < MMU_PAGEWALK.len());
         assert!(vpn.0 & (1 << 9*level ) - 1 == 0);
         assert!(ppn.0 & (1 << 9*level ) - 1 == 0);
         //debug_info!("mapping huge {:?}",vpn);
-        let pte = self.find_pte_create_level(vpn, MMU_MAX_LEVEL-level);
+        let pte = self.find_pte_create_level(vpn, MMU_PAGEWALK.len()-level);
         *pte = PageTableEntry::new_page(ppn.into(), flags, true);
     }
 

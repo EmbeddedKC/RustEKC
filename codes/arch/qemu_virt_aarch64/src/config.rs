@@ -6,6 +6,7 @@ pub const BOOT_KERNEL_STACK_SIZE: usize = 4096 * 4; // 16K
 
 ///////////////////////////////////
 //// used by mmi (extern "Rust")
+////
 
 #[no_mangle]
 pub const fn arch_phys_to_virt_addr(pa: PhysAddr) -> VirtAddr {
@@ -29,12 +30,23 @@ pub const fn arch_virt_to_phys(va: usize) -> usize {
 
 
 ///////////////////////////////////
-//// aarch64 platform config
-
+//// aarch64 MMU config
+////
+/// 
 pub const PAGE_SIZE: usize = 0x1000; //should not change
-
 pub const PAGE_SIZE_BITS: usize = 0xc;
 
+// MMU max pagewalk level is 4.
+pub type VpnIndexes = [usize; 4];
+
+// MMU pagewalk rules: [20:12]=9, [29-21]=9,....
+pub const MMU_PAGEWALK: VpnIndexes = [9,9,9,9];
+
+
+///////////////////////////////////
+//// aarch64 platform config
+////
+/// 
 pub const SIGNAL_TRAMPOLINE: usize = 0x100000000 - PAGE_SIZE;
 
 pub const TRAP_CONTEXT: usize = SIGNAL_TRAMPOLINE - PAGE_SIZE;
@@ -65,8 +77,6 @@ pub const OKSPACE_END: usize = 0x40800000;
 
 pub const CLOCK_FREQ: usize = 24000000;
 
-pub const MMU_MAX_LEVEL: usize = 4;
-//3: SV39.   4: SV48.   5: SV57.
 
 pub const MMIO: &[(usize, usize)] = &[
     (arch_phys_to_virt(0x0900_0000), 0x1_0000),   // PL011 UART (console!)

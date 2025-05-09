@@ -21,5 +21,6 @@ fn psci_hvc_call(func: u32, arg0: usize, arg1: usize, arg2: usize) -> usize {
 
 pub fn shutdown() -> ! {
     psci_hvc_call(PSCI_SYSTEM_OFF, 0, 0, 0);
-    unreachable!("It should shutdown!")
+    while(true) {}
+    unreachable!("It should shutdown!");
 }

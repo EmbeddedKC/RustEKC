@@ -24,7 +24,7 @@ pub fn service_init(){
     //#[cfg(feature = "aescbc")]
     aescbc::app_init();
 
-    measure::app_init();
+    //measure::app_init();
 }
 
 #[macro_export]

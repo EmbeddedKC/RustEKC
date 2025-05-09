@@ -10,13 +10,14 @@ use crate::{debug_warn, debug_info,
 use crate::service::register_mmkapi;
 use mmk_arch::config::*;
 
-pub const LOG_BASE_ADDRESS: usize = NKSPACE_START - 0x80000;
+pub const LOG_BASE_ADDRESS: usize = OKSPACE_END - 0x80000;
+pub const LOG_END_ADDRESS: usize = LOG_BASE_ADDRESS + 0x80000;
 
 pub static mut ALLOCED_ADDRESS: usize = LOG_BASE_ADDRESS;
 
 fn alloc_next() {
     unsafe {
-        if ALLOCED_ADDRESS >= NKSPACE_START {
+        if ALLOCED_ADDRESS >= LOG_END_ADDRESS {
             debug_warn!("logging buffer is FULL!");
             return;
         }
@@ -27,6 +28,7 @@ fn alloc_next() {
     
         ALLOCED_ADDRESS = ALLOCED_ADDRESS + 0x1000;
     }
+
 }
 
 pub fn app_init(){

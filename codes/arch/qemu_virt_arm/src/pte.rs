@@ -1,6 +1,6 @@
 use mmi::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
 use mmi::MapPermission;
-use mmi::PAGE_SIZE;
+use crate::config::*;
 
 // bitflags! {
 //     pub struct PTEFlags: u16 {
@@ -15,56 +15,37 @@ use mmi::PAGE_SIZE;
 // }
 
 
-
-
-
 bitflags::bitflags! {
     /// Memory attribute fields in the VMSAv8-64 translation table format descriptors.
-    pub struct PTEFlags: u64 {
+    pub struct PTEFlags: usize {
         // Attribute fields in stage 1 VMSAv8-64 Block and Page descriptors:
 
         /// Whether the descriptor is valid.
-        const VALID =       1 << 0;
-        /// The descriptor gives the address of the next level of translation table or 4KB page.
-        /// (not a 2M, 1G block)
-        const NON_BLOCK =   1 << 1;
+        const VALID_PAGETABLE_PAGE =       0b01 << 0;
+
+        const VALID_PAGEFRAME_PAGE =       0b10 << 0;
+
+        const BUFFERABLE =  1 << 2;
+
+        const CACHEABLE =   1 << 3;
+
+        const AP_BOTH_FA =  0b0001 << 4;
+
+        const AP_KERN_FA  =  0b0010 << 4;
+
+        const AP_BOTH_RO  =  0b0011 << 4;
+
         /// Memory attributes index field.
-        const ATTR_INDX =   0b111 << 2;
-        /// Non-secure bit. For memory accesses from Secure state, specifies whether the output
-        /// address is in Secure or Non-secure memory.
-        const NS =          1 << 5;
-        /// Access permission: accessable at EL0.
-        const AP_EL0 =      1 << 6;
-        /// Access permission: read-only.
-        const AP_RO =       1 << 7;
-        /// Shareability: Inner Shareable (otherwise Outer Shareable).
-        const INNER =       1 << 8;
-        /// Shareability: Inner or Outer Shareable (otherwise Non-shareable).
-        const SHAREABLE =   1 << 9;
-        /// The Access flag.
-        const AF =          1 << 10;
+        const SHARED_BY_CORE    = 1 << 8;
+
         /// The not global bit.
-        const NG =          1 << 11;
-        /// Indicates that 16 adjacent translation table entries point to contiguous memory regions.
-        const CONTIGUOUS =  1 <<  52;
-        /// The Privileged execute-never field.
-        const PXN =         1 <<  53;
-        /// The Execute-never or Unprivileged execute-never field.
-        const UXN =         1 <<  54;
+        const NG =          1 << 9;
 
-        // Next-level attributes in stage 1 VMSAv8-64 Table descriptors:
+        /// No use. (Should be Zero)
+        const SBZ =         1 <<  10;
 
-        /// PXN limit for subsequent levels of lookup.
-        const PXN_TABLE =           1 << 59;
-        /// XN limit for subsequent levels of lookup.
-        const XN_TABLE =            1 << 60;
-        /// Access permissions limit for subsequent levels of lookup: access at EL0 not permitted.
-        const AP_NO_EL0_TABLE =     1 << 61;
-        /// Access permissions limit for subsequent levels of lookup: write access not permitted.
-        const AP_NO_WRITE_TABLE =   1 << 62;
-        /// For memory accesses from Secure state, specifies the Security state for subsequent
-        /// levels of lookup.
-        const NS_TABLE =            1 << 63;
+        /// The execute-never field.
+        const XN =         1 <<  11;
     }
 }
 
@@ -76,59 +57,50 @@ enum MemType {
 }
 
 impl PTEFlags {
-    const ATTR_INDEX_MASK: u64 = 0b111_00;
 
     const fn from_mem_type(mem_type: MemType) -> Self {
-        let mut bits = ((mem_type as u64) << 2) | PTEFlags::VALID.bits;
+        let mut bits = Self::VALID_PAGEFRAME_PAGE.bits();
         if matches!(mem_type, MemType::Normal) {
-            bits |= Self::INNER.bits() | Self::SHAREABLE.bits();
+            bits |= Self::CACHEABLE.bits();
         }
         Self::from_bits_truncate(bits)
     }
 
     fn mem_type(&self) -> MemType {
-        let idx = (self.bits() & Self::ATTR_INDEX_MASK) >> 2;
+        let idx = (self.bits() & Self::CACHEABLE.bits()) == 0;
         match idx {
-            0 => MemType::Device,
-            1 => MemType::Normal,
+            True => MemType::Device,
+            False => MemType::Normal,
             _ => panic!("Invalid memory attribute index"),
         }
     }
 }
 
-// bitflags::bitflags! {
-//     pub struct MemFlags: usize {
-//         const READ          = 1 << 0;
-//         const WRITE         = 1 << 1;
-//         const EXECUTE       = 1 << 2;
-//         const USER          = 1 << 3;
-//         const DEVICE        = 1 << 4;
-//     }
-// }
-
 
 impl From<PTEFlags> for MapPermission {
     fn from(attr: PTEFlags) -> Self {
         let mut mp = Self::empty();
-        if !attr.contains(PTEFlags::VALID){
+        if !attr.contains(PTEFlags::VALID_PAGEFRAME_PAGE) &&
+            !attr.contains(PTEFlags::VALID_PAGETABLE_PAGE){
             return mp;
         }
-        if attr.contains(PTEFlags::VALID) {
+
+        if attr.contains(PTEFlags::AP_BOTH_RO) {
             mp |= Self::R;
+        } else
+        if attr.contains(PTEFlags::AP_KERN_FA) {
+            mp |= Self::R | Self::W;
+        }else
+        if attr.contains(PTEFlags::AP_BOTH_FA) {
+            mp |= Self::R | Self::W | Self::U;
         }
-        if !attr.contains(PTEFlags::AP_RO) {
-            mp |= Self::W;
-        }
-        if attr.contains(PTEFlags::AP_EL0) {
-            mp |= Self::U;
-            if !attr.contains(PTEFlags::UXN) {
-                mp |= Self::X;
-            }
-        } else if !attr.intersects(PTEFlags::PXN) {
+
+        if !attr.contains(PTEFlags::XN) {
             mp |= Self::X;
         }
+
         if attr.mem_type() == MemType::Device {
-            mp |= Self::G;
+            mp |= Self::D;
         }
         mp
     }
@@ -136,26 +108,24 @@ impl From<PTEFlags> for MapPermission {
 
 impl From<MapPermission> for PTEFlags {
     fn from(flags: MapPermission) -> Self {
-        let mut attr = if flags.contains(MapPermission::G) {
+        let mut attr = if flags.contains(MapPermission::D) {
             Self::from_mem_type(MemType::Device)
         } else {
             Self::from_mem_type(MemType::Normal)
         };
 
         if !flags.contains(MapPermission::W) {
-            attr |= Self::AP_RO;
+            attr |= Self::AP_BOTH_RO;
+        }else if !flags.contains(MapPermission::U) {
+            attr |= Self::AP_KERN_FA;
+        }else {
+            attr |= Self::AP_BOTH_FA;
         }
-        if flags.contains(MapPermission::U) {
-            attr |= Self::AP_EL0 | Self::PXN;
-            if !flags.contains(MapPermission::X) {
-                attr |= Self::UXN;
-            }
-        } else {
-            attr |= Self::UXN;
-            if !flags.contains(MapPermission::X) {
-                attr |= Self::PXN;
-            }
+
+        if !flags.contains(MapPermission::X) {
+            attr |= Self::XN;
         }
+
         attr
     }
 }
@@ -165,15 +135,15 @@ impl From<MapPermission> for PTEFlags {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct PageTableEntry {
-    pub bits: u64,
+    pub bits: usize,
 }
 
-impl From<u64> for PageTableEntry{
-    fn from(a: u64) -> Self{
-        PageTableEntry { bits: a as u64 }
+impl From<usize> for PageTableEntry{
+    fn from(a: usize) -> Self{
+        PageTableEntry { bits: a as usize }
     }
 }
-impl From<PageTableEntry> for u64{
+impl From<PageTableEntry> for usize{
     fn from(a: PageTableEntry) -> Self{
         a.bits
     }
@@ -183,38 +153,39 @@ impl PageTableEntry {
     const PHYS_ADDR_MASK: usize = 0xfffff000;
 
     pub fn new_page(paddr: PhysAddr, flags: MapPermission, is_block: bool) -> Self {
-        let mut attr = PTEFlags::from(flags) | PTEFlags::AF;
-        if !is_block {
-            attr |= PTEFlags::NON_BLOCK;
+        let mut attr = PTEFlags::from(flags) | PTEFlags::VALID_PAGEFRAME_PAGE;
+        if is_block {
+            panic!("block not supported.");
         }
-        Self{bits: attr.bits() | (paddr.0 & Self::PHYS_ADDR_MASK) as u64}
+        Self{bits: attr.bits() | (paddr.0 & Self::PHYS_ADDR_MASK) as usize}
     }
+
     pub fn new_table(paddr: PhysAddr) -> Self {
-        let attr = PTEFlags::NON_BLOCK | PTEFlags::VALID;
-        Self{bits: attr.bits() | (paddr.0 & Self::PHYS_ADDR_MASK) as u64}
+        let attr = PTEFlags::VALID_PAGETABLE_PAGE;
+        Self{bits: attr.bits() | (paddr.0 & Self::PHYS_ADDR_MASK) as usize}
     }
 
-    //Interface to MMK
-    //Note: Empty MapPermission means a page table pages.
-    pub fn new(pa: PhysAddr, flags: MapPermission, is_block: bool) -> Self {
+    // //Interface to MMK
+    // //Note: Empty MapPermission means a page table pages.
+    // pub fn new(pa: PhysAddr, flags: MapPermission, is_block: bool) -> Self {
         
-        let mut attr = PTEFlags::from(flags) | PTEFlags::AF | PTEFlags::VALID;
+    //     let mut attr = PTEFlags::from(flags) | PTEFlags::AF | PTEFlags::VALID;
 
-        if !is_block {
-            attr |= PTEFlags::NON_BLOCK;
-        }
+    //     if !is_block {
+    //         attr |= PTEFlags::NON_BLOCK;
+    //     }
         
 
-        if (flags & MapPermission::RWX) != MapPermission::empty() {
-            attr |= PTEFlags::INNER;
-        }
+    //     if (flags & MapPermission::RWX) != MapPermission::empty() {
+    //         attr |= PTEFlags::INNER;
+    //     }
 
-        if (flags & MapPermission::RWX) == MapPermission::empty() {
-            attr = PTEFlags::VALID | PTEFlags::NON_BLOCK;
-        }
+    //     if (flags & MapPermission::RWX) == MapPermission::empty() {
+    //         attr = PTEFlags::VALID | PTEFlags::NON_BLOCK;
+    //     }
 
-        Self{bits: attr.bits | (pa.0 & Self::PHYS_ADDR_MASK) as u64}
-    }
+    //     Self{bits: attr.bits | (pa.0 & Self::PHYS_ADDR_MASK) as u64}
+    // }
 
     //Interface to MMK
     pub const fn empty() -> Self {
@@ -242,18 +213,18 @@ impl PageTableEntry {
 
     //Interface to MMK
     pub fn valid(&self) -> bool {
-        self.flags() & PTEFlags::VALID != PTEFlags::empty()
+        self.flags() & PTEFlags{bits: 0b11} != PTEFlags::empty()
     }
 
     //Interface to MMK
     pub fn is_block(&self) -> bool {
-        self.valid() && (self.flags() & PTEFlags::NON_BLOCK == PTEFlags::empty())
+        false
     }
 
     //Interface to MMK
     pub fn set_perm(&mut self, flags: MapPermission) {
         let new_flags: PTEFlags = flags.into();
-        self.bits = (self.bits & Self::PHYS_ADDR_MASK as u64) as u64 | new_flags.bits();
+        self.bits = (self.bits & Self::PHYS_ADDR_MASK as usize) as usize | new_flags.bits();
     }
 
 }

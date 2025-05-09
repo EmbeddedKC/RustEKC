@@ -34,6 +34,8 @@ pub use frame_allocator::{
 
     frame_alloc,
     frame_dealloc,
+    frame_alloc_multiple,
+    frame_dealloc_multiple,
     outer_frame_alloc,
     outer_frame_dealloc
 };
@@ -49,10 +51,10 @@ extern "C" {
     fn ssignaltrampoline();
 }
 
-pub fn get_pte_array(pa: PhysAddr) -> &'static mut [PageTableEntry] {
+pub fn get_pte_array(pa: PhysAddr, len: usize) -> &'static mut [PageTableEntry] {
     let va: VirtAddr = pa.into();
     unsafe {
-        core::slice::from_raw_parts_mut(va.0 as *mut PageTableEntry, 512)
+        core::slice::from_raw_parts_mut(va.0 as *mut PageTableEntry, len)
     }
 }
 
@@ -102,7 +104,7 @@ macro_rules! pt_operate {
 use crate::service::register_mmkapi;
 pub fn init_vec(){
     let proxy = PROXYCONTEXT();
-    proxy.nkapi_enable = 1;
+    proxy.nkapi_enable = 1; //0xffffd160
     unsafe{
         register_mmkapi(MMKAPI_TRAP_HANDLE, nk_trap_handler as usize);
 

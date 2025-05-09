@@ -7,11 +7,10 @@ use core::arch::global_asm;
 //use cortex_a::registers::VBAR_EL1;
 
 use tock_registers::interfaces::{Readable, Writeable};
-use mmi::{CONFIGDATA, PROXYCONTEXT, PROXY_CONTEXT, TRAMPOLINE};
 use crate::config::*;
 use crate::arch_debug_info;
 use spin::Mutex;
-
+use crate::print_raw;
 
 mod gicv2;
 
@@ -47,26 +46,6 @@ pub struct TrapContext {
     
 }
 
-#[repr(u8)]
-#[derive(Debug)]
-#[allow(dead_code)]
-enum TrapKind {
-    Synchronous = 0,
-    Irq = 1,
-    Fiq = 2,
-    SError = 3,
-}
-
-#[repr(u8)]
-#[derive(Debug)]
-#[allow(dead_code)]
-enum TrapSource {
-    CurrentSpEl0 = 0,
-    CurrentSpElx = 1,
-    LowerAArch64 = 2,
-    LowerAArch32 = 3,
-}
-
 impl TrapContext {
     pub fn set_sp(&mut self, sp: usize) { self.x[2] = sp; }
     pub fn get_sp(& self)->usize { self.x[2] }
@@ -100,12 +79,14 @@ impl TrapContext {
 
 //called by trap.S
 #[no_mangle]
-fn mmk_trap_handler(tf: &mut TrapContext, kind: TrapKind, source: TrapSource){
-    arch_debug_info!("Default trap occur in MMK: kind=[{:?}] source=[{:?}]", kind, source);
-    arch_debug_info!("sp_el0={:x}, sepc={:x}", tf.x[31], tf.sepc);
-    panic!("panic.");
+//fn mmk_trap_handler(tf: &mut TrapContext, kind: TrapKind, source: TrapSource){
+fn mmk_trap_handler(tf: &mut TrapContext, kind: usize){
+    arch_debug_info!("Default trap occur in MMK: kind=[{:?}]", kind);
+    //arch_debug_info!("sp_el0={:x}, sepc={:x}", tf.x[31], tf.sepc);
+    //panic!("trap panic.");
     return;
 }
+
 
 #[no_mangle]
 fn invalid_exception(){ }
@@ -137,7 +118,7 @@ pub fn init(){
     
     //gicv2::init();
     //gicv2::irq_set_mask(PHYS_TIMER_IRQ_NUM, false);
-    arch_debug_info!("trap init success.");
+    print_raw("trap init success.\n");
     // unsafe {
 	// let cfg = CONFIGDATA();
     //     cfg.kernel_trap_handler = default_delegate as usize;
@@ -145,5 +126,8 @@ pub fn init(){
     //     PROXYCONTEXT().__deleted = TRAMPOLINE - __alltraps as usize + __restore as usize;
     
     // }
+
+    //for debug use
+    //crate::arch_set_INTR_handler(mmk_debug_handler as usize);
 }
 

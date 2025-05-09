@@ -1,6 +1,6 @@
 ENTRY(_start)
 
-BASE_ADDRESS = 0x10000;
+BASE_ADDRESS = 0x40010000;
 
 SECTIONS
 {
@@ -9,7 +9,7 @@ SECTIONS
 
     .text : {
         stext = .;
-        *(.text.entry)
+        *(.text._start)
 
         . = ALIGN(4K);
         strampoline = .;
@@ -39,6 +39,7 @@ SECTIONS
     }
     
     .data : {
+        . = ALIGN(16K);
         sdata = .;
         *(.data.boot_page_table)
         *(.data .data.*)

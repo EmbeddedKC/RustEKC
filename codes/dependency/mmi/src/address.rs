@@ -126,7 +126,7 @@ impl VirtAddr {
     pub const fn new(v: usize) -> Self {
         Self(v)
     }
-    pub fn floor(&self) -> VirtPageNum { VirtPageNum(arch_addr_to_pagenum(self.0)) }
+    pub fn floor(&self) -> VirtPageNum { VirtPageNum(self.0 / PAGE_SIZE) }
     pub fn ceil(&self) -> VirtPageNum  { VirtPageNum((self.0 - 1 + PAGE_SIZE) / PAGE_SIZE) }
     pub fn page_offset(&self) -> usize { self.0 & (PAGE_SIZE - 1) }
     pub fn aligned(&self) -> bool { self.page_offset() == 0 }
@@ -255,34 +255,9 @@ impl VirtPageNum {
     pub const fn new(v: usize) -> Self {
         Self(v)
     }
-
-    //[0] = [20;12] (lowest)
-    //[1] = [29;21]
-    //[2] = [38;30] (sv39 highest)
-    //[3] = [47;39] (sv48 highest)
-    //[4] = [56;48] (sv57 highest)
-    pub fn indexes(&self) -> [usize; 4] {
-        let mut vpn = self.0;
-        let mut idx = [0usize; 4];
-        for i in 0..4{
-            idx[i] = vpn & 511;
-            vpn >>= 9;
-        }
-        idx
-    }
 }
 
 /*
-
-
-impl PhysPageNum{
-    pub fn get_pte_array(&self) -> &'static mut [PageTableEntry] {
-        let pa: PhysAddr = self.clone().into();
-        unsafe {
-            core::slice::from_raw_parts_mut(pa.0 as *mut PageTableEntry, 512)
-        }
-    }
-}
 
 
 #[derive(Copy, Clone)]

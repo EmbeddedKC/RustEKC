@@ -22,7 +22,7 @@ macro_rules! debug_info {
 #[macro_export]
 macro_rules! _debug_info_level {
     () => {
-        10
+        0
     }
 }
 

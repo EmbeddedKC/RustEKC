@@ -29,20 +29,20 @@ use spin::Mutex;
 use core::default;
 use core::panic::PanicInfo;
 
-fn clear_bss() {
-    extern "C" {
-        fn sbss_no_stack();
-        fn ebss();
-    }
-    (sbss_no_stack as usize..ebss as usize).for_each(|a| {
-        unsafe { (a as *mut u8).write_volatile(0) }
-    });
-}
+// fn clear_bss() {
+//     extern "C" {
+//         fn sbss_no_stack();
+//         fn ebss();
+//     }
+//     (sbss_no_stack as usize..ebss as usize).for_each(|a| {
+//         unsafe { (a as *mut u8).write_volatile(0) }
+//     });
+// }
 
 #[no_mangle]
 pub fn mmk_main(){
     debug_info_level!(7, "Hello MMK.");
-    clear_bss();
+    //clear_bss();
     mm::init();
     debug_info_level!(7, "mm init success.");
 

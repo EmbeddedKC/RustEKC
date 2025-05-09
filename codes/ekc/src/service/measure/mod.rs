@@ -26,7 +26,7 @@ pub fn app_init(){
     let mut measurement: [u8;32] = [0;32];
 
     //let start = arch_get_cpu_time();
-    //gethash_rpos(&mut measurement);
+    //gethash_ekc(&mut measurement);
     //let end = arch_get_cpu_time();
     
     //debug_warn!("rpos hash - cost: {}",end-start);
@@ -91,7 +91,7 @@ pub fn gethash(out_ptr: &mut [u8; 32]){
     }
 }
 
-pub fn gethash_rpos(out_ptr: &mut [u8; 32]){
+pub fn gethash_ekc(out_ptr: &mut [u8; 32]){
     //let mut hasher = Sha3::v256();
     unsafe{
 

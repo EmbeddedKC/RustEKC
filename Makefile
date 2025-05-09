@@ -6,14 +6,14 @@ export cwd := $(shell pwd)
 export MODE ?= debug
 export PAYLOAD ?= $(cwd)/payloads/freertos_blinky_qemu_aarch64.bin
 
-# export BARD ?= qemu_virt_arm
+export BOARD ?= qemu_virt_arm
 # export BOARD ?= qemu_virt_riscv64
 # export BOARD ?= allwinner_D1H
-export BOARD ?= qemu_virt_aarch64
+# export BOARD ?= qemu_virt_aarch64
 # export BOARD ?= raspberry_pi4
 
-# export TARGET = arm-none-eabi
-export TARGET = aarch64-unknown-none
+export TARGET = armv7a-none-eabi
+# export TARGET = aarch64-unknown-none
 # export TARGET = riscv64gc-unknown-none-elf
 
 ##########
@@ -49,6 +49,21 @@ rudra:
 test: $(MMK_BIN)
 	cd $(SRC_PATH) && make tmp_run
 
+get_dts:
+	qemu-system-arm \
+		-M virt \
+		-cpu cortex-a15 \
+		-nographic \
+		-machine dumpdtb=virt.dtb
+	dtc -I dtb -O dts -o virt.dts virt.dtb
+	
+linux:
+	qemu-system-arm\
+		-M versatilepb \
+		-nographic \
+		-kernel zImage \
+		-initrd initramfs.cpio.gz
+	
 debug: $(MMK_BIN)
 	cd $(SRC_PATH) && make tmp_debug
 

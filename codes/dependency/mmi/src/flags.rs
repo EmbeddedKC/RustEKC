@@ -8,6 +8,7 @@ bitflags! {
         const RWX = 0b111 << 1;
         const U = 1 << 4;  // user
         const G = 1 << 5;  // global
+        const D = 1 << 6;  // device (not cachable)
         const O = 1 << 9;  // copy on write
     }
     
