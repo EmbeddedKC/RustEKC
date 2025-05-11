@@ -21,28 +21,35 @@ nk_gate:
     # let r10 to be PROXYCONTEXT
     PROXYCONTEXT r10
 
-    LDR r11, [r10, #91*4] 
+    LDR r11, [r10, #PROXY_NKAPI_LEVEL] 
     # nkapi_level
     MOV r10, #0
     CMP r11, r10
 
     LDMFD SP!, {R10-R12}
 
-    // fffff010
+    # fffff010
     BNE nk_bypass 
     # nkapi_level is 0 means in os (gate), >0 means in mmk (bypass).
 
 nk_entry:
+    #######################
+    # Critical Note - calling convention:
+    # r0 - r10 would be break when calling NKAPI.
+    #######################
 
-    # let r10 to be PROXYCONTEXT
-    PROXYCONTEXT r10
+    # load OS's CPSR (intr) from proxy to r11, keep r11 not changed!
+    MRS r10, CPSR
 
-    # load OS's CPSR (intr) from proxy to r7, keep r7 not changed!
-    MRS r7, CPSR
+    # addr = 0x*1c
+    # let r8 to be PROXYCONTEXT
+    PROXYCONTEXT r8
     
     # disable interrupts
-    BL disable_intr
-    
+    DISABIE_INTR
+
+    # nkapi_level
+    LDR r9, [r8, #PROXY_NKAPI_LEVEL] 
     ADD r9, r9, #1
     STR r9, [r8, #PROXY_NKAPI_LEVEL]
     # api level add 1 when entry
@@ -50,28 +57,26 @@ nk_entry:
     # use MMK's satp
     LDR r9, [r8, #PROXY_EKC_SATP]
 
-    # addr = 0xfffff0fc
+    # addr = 0xfffff038
     WRITE_ROOT_PT r9
 
-    # store OS's CPSR (intr) from r7 to proxy
-    STR r7, [r8, #PROXY_OS_CPSR]
+    # store OS's CPSR (intr) from r11 to proxy
+    # now r10 can be used.
+    STR r10, [r8, #PROXY_OS_CPSR]
     
     # store all outer kernel registers to proxy, 包括栈指针
-    PROXYCONTEXT r7
-    # addr=0xfffffffffffff038
-    ADD r9, r7, #(PROXY_OS_REGS)
+
+    ADD r9, r8, #(PROXY_OS_REGS)
     SAVE_CTX_TO_ADDR r9
-    # this macro would break r8 and r9
 
     # load nk sp
-    LDR r9, [r7, #PROXY_EKC_SP]
-    # addr=0xfffffffffffff0c8
+    LDR r9, [r8, #PROXY_EKC_SP]
 
-    MOV SP, r9
+    # addr = 0x*08c
+    MOV SP, r9    
 
     # let r8 to be APITABLE (METADATA + 0x800)
     MMKAPI_TABLE r8
-    # addr=0xfffffffffffff0d0
 
     # the handler in nkcall vec: APITABLE + nk_call_num*8
     LSL r7, r7, #3
@@ -84,9 +89,9 @@ nk_entry:
     # params more than 4 should be in SP.
     # caller-cleaned stack.
     push {r4, r5}
-    BLX r8
+    BLX r8  
     pop {r4, r5}
-    # addr=0xfffffffffffff0e0
+    # blx addr=0x*0a4
 
     # let r8 to be ProxyContext (NK_TRAMPOLINE)
     PROXYCONTEXT r8
@@ -141,7 +146,7 @@ nk_bypass:
     # 低地址
     # #####################################
 nk_exit:
-    # 0x*0f0
+    # 0x*0fc
     # let r8 to be ProxyContext (NK_TRAMPOLINE)
     PROXYCONTEXT r8
 
@@ -156,10 +161,9 @@ nk_exit:
     STR r9, [r8, #PROXY_NKAPI_LEVEL]
     # api level remove 1 when exit
 
-    # addr = 0xfffff108
-
     # load OS's satp
     LDR r9, [r8, #PROXY_OS_SATP]
+    # addr = 0xfffff118
     WRITE_ROOT_PT r9
 
     # tlbi alle1
@@ -170,13 +174,13 @@ nk_exit:
     LDR r7, [r8, #PROXY_OS_CPSR]
     MSR cpsr, r7
 
-    # addr = 0x*118
+    # addr = 0x*130
     # load all outer kernel registers from proxy, 包括栈指针
     PROXYCONTEXT r9
     ADD r9, r9, #PROXY_OS_REGS
     LOAD_CTX_FROM_ADDR r9 
     
-    # addr = 0x*15c
+    # addr = 0x*170
     # jump back, according to outer kernel's ra
     BX lr
 

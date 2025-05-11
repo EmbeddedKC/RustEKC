@@ -32,11 +32,6 @@
     LDR \n, =-0x3000+0x400
 .endm
 
-.macro WRITE_ROOT_PT n
-    MCR p15, 0, \n, c2, c0, 0
-    MCR p15, 0, \n, c2, c0, 1
-.endm
-
 
 .altmacro
 .macro SAVE_STACK z s
@@ -78,8 +73,9 @@
     .endr
 .endm
 
-.include "src/asm/entry.S"
 .include "src/asm/cpu.S"
+
+.include "src/asm/entry.S"
 .include "src/asm/nk_gate.S"
 .include "src/trap/trap.S"
 # .include "src/trap/trap_signal.S"

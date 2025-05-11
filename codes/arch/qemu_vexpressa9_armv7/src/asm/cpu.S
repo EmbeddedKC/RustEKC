@@ -2,6 +2,21 @@
     bx LR
 .endm
 
+.macro WRITE_ROOT_PT n
+    MCR p15, 0, \n, c2, c0, 0
+    MCR p15, 0, \n, c2, c0, 1
+.endm
+
+.macro ENABIE_INTR
+    CPSIE I
+    CPSIE F
+.endm
+    
+.macro DISABIE_INTR
+    CPSID I
+    CPSID F
+.endm
+
 .globl cpu_time
 cpu_time:
     MRC p15, 0, r0, c14, c0, 2
