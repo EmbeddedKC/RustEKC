@@ -1,0 +1,21 @@
+{
+  "llvm-target": "armv5te-none-eabi",
+  "arch": "arm",
+  "os": "none",
+  "vendor": "",
+  "env": "eabi",
+  "target-endian": "little",
+  "target-pointer-width": "32",
+  "data-layout": "e-m:e-p:32:32-i64:64-n32-S64",
+  "features": "+v5te",
+  "disable-redzone": true,
+  "executables": true,
+  "relocation-model": "static",
+  "code-model": "small",
+  "panic-strategy": "abort",
+  "linker": "arm-none-linux-gnueabi-ld",
+  "emit-debug-gdb-scripts": false,
+  "llvm-abiname": "eabi",
+  "cpu": "arm926ej-s"
+}
+

@@ -9,6 +9,14 @@ board_qemu = []
 board_k210 = []
 board_nezha = []
 
+[profile.dev]
+opt-level = 0
+panic = "abort"
+
+[profile.release]
+opt-level = 0
+panic = "abort"
+
 [dependencies]
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 buddy_system_allocator = "0.6"
@@ -29,4 +37,4 @@ rs_sha256 = "0.1.*"
 # Makefile will generate another line like:
 # mmk_arch = {path = "...."}
 
-mmk_arch = {path = "../arch/qemu_virt_arm"}
+mmk_arch = {path = "../arch/qemu_vexpressa9_armv7"}

@@ -20,8 +20,9 @@ TOP := ../../k210.bin
 # OBJCOPY := rust-objcopy --binary-architecture=riscv64
 # OBJDUMP := rust-objdump --arch-name=aarch64
 # OBJCOPY := rust-objcopy --binary-architecture=aarch64
-OBJDUMP := rust-objdump --arch-name=armv7a
+# OBJDUMP := rust-objdump --arch-name=armv7a
 # OBJCOPY := rust-objcopy --binary-architecture=armv7a
+# OBJCOPY := arm-none-eabi-objcopy
 OBJCOPY := arm-none-eabi-objcopy
 
 # Disassembly
@@ -33,7 +34,8 @@ build: $(KERNEL_BIN)
 
 env:
 	rustup override set nightly-2023-06-25
-	(rustup target list | grep "$(TARGET) (installed)") || rustup target add $(TARGET)
+	- (rustup target list | grep "$(TARGET) (installed)") || rustup target add $(TARGET)
+	@echo ====================
 	rustup component add rust-src
 	rustup component add llvm-tools-preview
 
@@ -62,6 +64,9 @@ tmp_run: build
 
 tmp_debug: build
 	cd $(ARCH_PATH) && sudo sh debug.sh $(KERNEL_ELF) $(KERNEL_BIN) $(PAYLOAD_BIN)
+
+tmp_payload_debug: build
+	cd $(ARCH_PATH) && sudo sh debug.sh $(PAYLOAD_ELF) $(KERNEL_BIN) $(PAYLOAD_BIN)
 
 clean:
 	@cargo clean

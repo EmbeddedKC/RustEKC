@@ -40,8 +40,7 @@ use core::panic::PanicInfo;
 // }
 
 #[no_mangle]
-pub fn mmk_main(){
-    debug_info_level!(7, "Hello MMK.");
+pub fn mmk_main(param_from_bootloader: [usize; 5]){
     //clear_bss();
     mm::init();
     debug_info_level!(7, "mm init success.");
@@ -52,7 +51,7 @@ pub fn mmk_main(){
     nkapi_alloc_mul(early_pthandle, VirtAddr(OKSPACE_START).into()
     , VirtAddr(OKSPACE_END).into(), MapType::Identical, 
     MapPermission::R | MapPermission::W | MapPermission::X);
-
+    
     // nkapi_alloc(early_pthandle, 
     //     VirtAddr(OKSPACE_START).into(),
     //     MapType::Identical, 
@@ -63,7 +62,11 @@ pub fn mmk_main(){
     let mut proxy = PROXYCONTEXT();
     proxy.nk_satp = mm::KERNEL_SPACE.lock().token();
     proxy.outer_register[XREG_RA] = OKSPACE_START as usize; //let ra be outer kernel init
-
+    
+    for a in 0..5 {
+        proxy.outer_register[XREG_PARAM + a] = param_from_bootloader[a]; //let ra be outer kernel init
+    }
+    
     service::service_init();
     debug_info!("service init success.");
 

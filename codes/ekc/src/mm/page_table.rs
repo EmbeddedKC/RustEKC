@@ -83,8 +83,8 @@ impl PageTableRecord {
     pub fn new(id: usize) -> Self {
 
         let pt_siz = MMU_PAGETABLE_SIZE[MMU_PAGETABLE_SIZE.len()-1];
-        let ppn = frame_alloc_multiple(pt_siz/PAGE_SIZE).unwrap();
-
+        let ppn = frame_alloc_multiple(pt_siz/PAGE_SIZE, pt_siz/PAGE_SIZE).unwrap();
+        debug_info!("page table [{}] record {}: {:x}", id, pt_siz/PAGE_SIZE, ppn.0);
         PageTableRecord {
             pt_id: id,
             root_ppn: ppn,
@@ -159,7 +159,7 @@ impl PageTableRecord {
             }
             if !pte_is_valid(pte) {
                 let pagetable_size: usize = MMU_PAGETABLE_SIZE[i-1];
-                let ppn = frame_alloc_multiple(pagetable_size/PAGE_SIZE).unwrap();
+                let ppn = frame_alloc_multiple(pagetable_size/PAGE_SIZE, pagetable_size/PAGE_SIZE).unwrap();
 
                 *pte = PageTableEntry::new_table(ppn.into());
 

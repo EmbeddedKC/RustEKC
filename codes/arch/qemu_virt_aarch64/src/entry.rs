@@ -131,17 +131,22 @@ unsafe extern "C" fn _start() -> ! {
     asm!("
         adrp    x8, boot_stack_top
         mov     sp, x8
+
+        str x3, [sp, -8]! 
+        str x2, [sp, -8]! 
+        str x1, [sp, -8]! 
+        str x0, [sp, -8]! 
+        mov x0, sp
+
         bl      {switch_to_el1}
 
         bl      {init_boot_page_table}
         bl      {init_mmu}
 
-        ldr     x8, =boot_stack_top
-        mov     sp, x8  
-        
         ldr     x8, ={arch_early_init}
         blr     x8  
         
+        mov x0, sp
         ldr     x8, =mmk_main
         br      x8 
 

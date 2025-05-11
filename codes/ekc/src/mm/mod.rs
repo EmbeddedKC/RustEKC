@@ -59,7 +59,6 @@ pub fn get_pte_array(pa: PhysAddr, len: usize) -> &'static mut [PageTableEntry] 
 }
 
 pub fn init() {
-    debug_info!("trampoline pa: {:x}", strampoline as usize);
     //debug_info!("nktrampoline pa: {:x}", snktrampoline as usize);
     heap_allocator::init_heap();  // 堆空间分配器
     frame_allocator::init_frame_allocator();  // 物理页帧分配器
@@ -352,9 +351,6 @@ nkapi!{
                     }
                 }
             }
-            // unsafe{
-            //     asm!("sfence.vma zero, t0",in("t0") pt_handle);
-            // }
             arch_flush_tlb(pt_handle);
         }
 
@@ -452,7 +448,7 @@ nkapi!{
 nkapi!{
     fn nkapi_alloc(pt_handle: usize, root_vpn: VirtPageNum, size: usize, 
         map_type_u: usize, perm: MapPermission) -> PhysPageNum{
-        debug_info_level!(3,"nkapi_alloc({:x}, {:x}, {:x}, {:x}, {:x})", pt_handle, root_vpn.0, size, map_type_u, perm.bits());
+        debug_info_level!(3,"nkapi_alloc({:x}, {:x}, {:x}, {:x}, {:?}({:x}))", pt_handle, root_vpn.0, size, map_type_u, perm, perm.bits());
 
         let mut pte_perm = perm.clone();
         let map_type = MapType::from(map_type_u);

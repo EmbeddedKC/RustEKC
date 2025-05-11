@@ -10,7 +10,7 @@ use crate::mm::get_pte_array;
 pub trait FrameAllocator {
     fn new() -> Self;
     fn alloc(&mut self, src: u8) -> Option<PhysPageNum>;
-    fn alloc_multiple(&mut self, owner: u8, blksize: usize) -> Option<PhysPageNum>;
+    fn alloc_multiple(&mut self, owner: u8, blksize: usize, align: usize) -> Option<PhysPageNum>;
     fn dealloc(&mut self, ppn: PhysPageNum, src: u8);
     fn dealloc_multiple(&mut self, ppn: PhysPageNum, src: u8, blksize: usize);
     fn add_ref(&mut self, ppn: PhysPageNum, src: u8);
@@ -41,9 +41,12 @@ impl FrameAllocator for StackFrameAllocator {
             refcounter: BTreeMap::new(),
         }
     }
-    fn alloc_multiple(&mut self, owner: u8, mut blksize: usize) -> Option<PhysPageNum>  {
+    fn alloc_multiple(&mut self, owner: u8, mut blksize: usize, mut align: usize) -> Option<PhysPageNum>  {
             if blksize <= 0 {
                 blksize = 1;
+            }
+            if align <= 0 {
+                align = 1;
             }
             // 排序并去重，防止重复值干扰判断
             let mut sorted = self.recycled.clone();
@@ -52,6 +55,10 @@ impl FrameAllocator for StackFrameAllocator {
 
             //alloc recycled block
             for window in sorted.windows(blksize.into()) {
+
+                if window[0].0 % align != 0 {
+                    continue;
+                }
 
                 let mut fail = false;
                 for i in 0 .. window.len()-1 {
@@ -74,7 +81,13 @@ impl FrameAllocator for StackFrameAllocator {
             }
         
             //alloc new block
-            let record = self.current;
+            let mut record = self.current;
+            while record.0 % align != align - 1 {
+                self.current.step();
+                record = self.current;
+                self.recycled.push(record);
+            }
+
             for i in 0..blksize {
                 if self.current == self.end {
                     debug_warn!("No enough free page!");
@@ -244,10 +257,10 @@ pub fn frame_alloc() -> Option<PhysPageNum> {
     // }
     pn
 }
-pub fn frame_alloc_multiple(blksiz: usize) -> Option<PhysPageNum> {
+pub fn frame_alloc_multiple(blksiz: usize, align: usize) -> Option<PhysPageNum> {
     let pn = FRAME_ALLOCATOR
         .lock()
-        .alloc_multiple(0, blksiz);
+        .alloc_multiple(0, blksiz, align);
     
     // if let Some(ppn) = pn {
     //     unsafe{

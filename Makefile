@@ -5,8 +5,11 @@ export cwd := $(shell pwd)
 
 export MODE ?= debug
 export PAYLOAD ?= $(cwd)/payloads/freertos_blinky_qemu_aarch64.bin
+export PAYLOAD := $(cwd)/zImage
+export PAYLOAD_ELF := $(cwd)/vmlinux
 
-export BOARD ?= qemu_virt_arm
+#export BOARD ?= qemu_virt_armv7
+export BOARD ?= qemu_vexpressa9_armv7
 # export BOARD ?= qemu_virt_riscv64
 # export BOARD ?= allwinner_D1H
 # export BOARD ?= qemu_virt_aarch64
@@ -51,22 +54,34 @@ test: $(MMK_BIN)
 
 get_dts:
 	qemu-system-arm \
-		-M virt \
-		-cpu cortex-a15 \
+		-M vexpress-a9 \
+		-cpu cortex-a9 \
 		-nographic \
 		-machine dumpdtb=virt.dtb
 	dtc -I dtb -O dts -o virt.dts virt.dtb
 	
 linux:
 	qemu-system-arm\
-		-M versatilepb \
 		-nographic \
 		-kernel zImage \
-		-initrd initramfs.cpio.gz
+		-initrd initramfs.cpio.gz \
+		-machine vexpress-a9 -cpu cortex-a9
+	
+linux_debug:
+	tmux new-session -d \
+	"echo '[qemu debug linux]' && qemu-system-arm -s -S \
+					-machine vexpress-a9 -cpu cortex-a9 \
+					-nographic \
+					-kernel zImage \
+	" \
+	&& tmux split-window -h "gdb-multiarch vmlinux -ex 'target remote localhost:1234'" \
+	&& tmux -2 attach-session -d
 	
 debug: $(MMK_BIN)
 	cd $(SRC_PATH) && make tmp_debug
-
+	
+payload_debug: $(MMK_BIN)
+	cd $(SRC_PATH) && make tmp_debug
 clean:
 	rm -f $(MMK_BIN)
 	cd $(SRC_PATH) && make clean
