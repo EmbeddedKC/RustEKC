@@ -44,7 +44,7 @@ pub fn app_init() {
     
 }
 pub fn app_handler(id: usize, params: [usize; 6]) -> usize {
-    unsafe{
+    //unsafe{
     match id {
         C_INITIALIZE => {
             return crypto_impl::c_initialize();
@@ -110,6 +110,6 @@ pub fn app_handler(id: usize, params: [usize; 6]) -> usize {
             debug_error!("Unsupported Cryptoki call!");
             return 1;
         }
-    }
+    //}
 }
 }

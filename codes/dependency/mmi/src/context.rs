@@ -43,6 +43,12 @@ pub struct ConfigData{
     pub allocator_start: usize,
     //start address of outer allocator.
 
-    pub allocator_end: usize
+    pub allocator_end: usize,
+    //end address of outer allocator.
+
+    pub shared_start_vaddr: usize,
+    //start address of outer allocator.
+
+    pub shared_end_vaddr: usize
     //end address of outer allocator.
 }

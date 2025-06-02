@@ -16,7 +16,7 @@ mod mm;
 mod trap;
 mod service;
 mod config;
-
+mod util;
 
 pub use console::*;
 pub use api::*;
@@ -29,15 +29,11 @@ use spin::Mutex;
 use core::default;
 use core::panic::PanicInfo;
 
-// fn clear_bss() {
-//     extern "C" {
-//         fn sbss_no_stack();
-//         fn ebss();
-//     }
-//     (sbss_no_stack as usize..ebss as usize).for_each(|a| {
-//         unsafe { (a as *mut u8).write_volatile(0) }
-//     });
-// }
+fn default_trap_handler(ctx: &mut TrapContext, typ: usize){
+    debug_info!("Trap occured: {:x}", typ);
+    debug_info!("From address: {:x}", ctx.x[14]);
+    return;
+}
 
 #[no_mangle]
 pub fn mmk_main(param_from_bootloader: [usize; 5]){
@@ -52,6 +48,7 @@ pub fn mmk_main(param_from_bootloader: [usize; 5]){
     , VirtAddr(OKSPACE_END).into(), MapType::Identical, 
     MapPermission::R | MapPermission::W | MapPermission::X);
     
+    nkapi_set_shared_range_vaddr(OKSPACE_START, OKSPACE_END);
     // nkapi_alloc(early_pthandle, 
     //     VirtAddr(OKSPACE_START).into(),
     //     MapType::Identical, 
@@ -67,6 +64,19 @@ pub fn mmk_main(param_from_bootloader: [usize; 5]){
         proxy.outer_register[XREG_PARAM + a] = param_from_bootloader[a]; //let ra be outer kernel init
     }
     
+    ///////////// debug code /////////////
+    if true {
+        debug_info!("debug code enabled.");
+
+        nkapi_alloc_mul(early_pthandle, VirtAddr(NKSPACE_START).into()
+                , VirtAddr(NKSPACE_END).into(), MapType::Identical, 
+                MapPermission::R | MapPermission::W | MapPermission::X);
+        let mut config = CONFIGDATA();
+        config.kernel_trap_handler = default_trap_handler as usize;
+        config.usr_trap_handler = default_trap_handler as usize;
+    }
+    ///////////// debug code /////////////
+
     service::service_init();
     debug_info!("service init success.");
 

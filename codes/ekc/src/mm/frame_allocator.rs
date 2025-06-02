@@ -223,15 +223,6 @@ pub fn outer_frame_alloc(owner: u8) -> Option<PhysPageNum> {
     }
 
     let pn = outer_allocator.alloc(owner);
-    
-    if let Some(ppn) = pn{
-        unsafe{
-            for i in 0..512 {
-                let adr = ((ppn.0<<12) + i*8) as *mut usize;
-                *adr = 0;
-            }
-        }
-    }
     pn
     
 }
@@ -244,17 +235,7 @@ pub fn frame_alloc() -> Option<PhysPageNum> {
     let pn = FRAME_ALLOCATOR
         .lock()
         .alloc(0);
-    
-    // if let Some(ppn) = pn {
-    //     unsafe{
-    //         for i in 0..PAGE_SIZE/4 {
-    //             let adr = ((ppn.0<<12) + i*8) as *mut u64;
-    //             *adr = 0;
-    //         }
-    //     }
-    // }else{
-    //     debug_error!("No enough space for Page Table!");
-    // }
+
     pn
 }
 pub fn frame_alloc_multiple(blksiz: usize, align: usize) -> Option<PhysPageNum> {
@@ -262,16 +243,6 @@ pub fn frame_alloc_multiple(blksiz: usize, align: usize) -> Option<PhysPageNum> 
         .lock()
         .alloc_multiple(0, blksiz, align);
     
-    // if let Some(ppn) = pn {
-    //     unsafe{
-    //         for i in 0..512 {
-    //             let adr = ((ppn.0<<12) + i*8) as *mut usize;
-    //             *adr = 0;
-    //         }
-    //     }
-    // }else{
-    //     debug_error!("No enough space for Page Table!");
-    // }
     pn
 }
 
@@ -282,12 +253,6 @@ pub fn permanent_frame_alloc() -> Option<PhysPageNum> {
         .alloc(0);
     
     if let Some(ppn) = pn{
-        unsafe{
-            for i in 0..512 {
-                let adr = ((ppn.0<<12) + i*8) as *mut usize;
-                *adr = 0;
-            }
-        }
     }else{
         debug_error!("Permanent: No enough space for Page Table!");
     }

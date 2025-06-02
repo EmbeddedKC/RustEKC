@@ -13,6 +13,8 @@ use alloc::{boxed::Box};
 use lazy_static::*;
 use spin::Mutex;
 
+use crate::util::translate_from_user;
+
 use alloc::vec::Vec;
 
 // use crate::task::{current_task, Signals};
@@ -85,7 +87,8 @@ macro_rules! pt_operate {
     ($handle:expr, $target:ident, $oper:block) => {
         let mut _find = false;
         for tar in PAGE_TABLE_LIST.lock().iter_mut(){
-            if tar.id() == $handle {
+            if (tar.id() == $handle) || 
+                    ($handle==usize::MAX && tar.id() == CURRENT_PT.lock().as_ref().clone()) {
                 _find = true;
                 let $target: &mut PageTableRecord = tar;
                 //debug_info!("find page table with pt handle [{}]", $handle);
@@ -104,7 +107,6 @@ use crate::service::register_mmkapi;
 pub fn init_vec(){
     let proxy = PROXYCONTEXT();
     proxy.nkapi_enable = 1; //0xffffd160
-    unsafe{
         register_mmkapi(MMKAPI_TRAP_HANDLE, nk_trap_handler as usize);
 
         register_mmkapi(MMKAPI_CONFIG,nkapi_config as usize);
@@ -122,7 +124,7 @@ pub fn init_vec(){
         register_mmkapi(MMKAPI_DEBUG,nkapi_print_pt as usize);
         
         register_mmkapi(MMKAPI_CURRENT_PT,nkapi_current_pt as usize);
-    }
+
 }
 
 fn check_valid(owner: u8, ppn: PhysPageNum, perm: MapPermission) -> bool{
@@ -143,12 +145,10 @@ fn check_valid(owner: u8, ppn: PhysPageNum, perm: MapPermission) -> bool{
     
     if perm.contains(MapPermission::X) && !perm.contains(MapPermission::U) {
         let pa: PhysAddr = ppn.into();
-            unsafe{
-                KERNEL_SPACE.lock().page_table.map(ppn.0.into(), 
-                    ppn, MapPermission::R | MapPermission::W);
-                arch_scan_instruction(ppn.into());
-                debug_info!("check finish.");
-            }
+             KERNEL_SPACE.lock().page_table.map(ppn.0.into(), 
+                ppn, MapPermission::R | MapPermission::W);
+            arch_scan_instruction(ppn.into());
+            debug_info!("check finish.");
     }
 
     if enquire_ref(ppn.into()).len() == 0 {
@@ -192,33 +192,51 @@ nkapi!{
 }
 
 nkapi!{
-    fn nkapi_config(t: usize, val: usize){
-        debug_info_level!(3,"nkapi_config({:x}, {:x})", t, val);
+    fn nkapi_config(t: usize, val1: usize, val2: usize, val3: usize){
+        //debug_info_level!(3,"nkapi_config({:x}, {:x})", t, val);
         let conf = CONFIGDATA();
         match t{
             MMKCFG_S_DELEGATE =>{
-                conf.kernel_trap_handler = val;
+                conf.kernel_trap_handler = val1;
             }
             MMKCFG_U_DELEGATE =>{
-                conf.usr_trap_handler = val;
+                conf.usr_trap_handler = val1;
             }
             MMKCFG_SIGNAL => {
-                conf.signal_handler = val;
+                conf.signal_handler = val1;
             }
-            MMKCFG_ALLOCATOR_START => {
-                conf.allocator_start = val;
+            MMKCFG_ALLOCATOR => {
+                conf.allocator_start = val1;
+                conf.allocator_end = val2;
                 //proxy.allocator_start = val;
             }
             MMKCFG_ALLOCATOR_END => {
-                conf.allocator_end = val;
+                conf.allocator_end = val2;
                 //proxy.allocator_end = val;
+            }
+            MMKCFG_SHARED => {
+                conf.shared_start_vaddr = val1;
+                conf.shared_end_vaddr = val2;
+                //proxy.allocator_end = val;
+            }
+            10 => {
+                //Print a string with size less than 512.
+                //FIXME: Only for debug use.
+                //It may cause unknown risks.
+                unsafe{
+                    let str_ptr: &[u8; 512] = &*(val1 as *const [u8; 512]);
+                    if let Some(ker_ptr) = translate_from_user(str_ptr) {
+                        crate::mmk_arch::print_raw_chars(ker_ptr);
+                    }
+                }
+                nkapi_return_ok!();
             }
             _ => {
                 debug_info!("Unknown config ID: {}", t);
                 nkapi_return_err!();
             }
         }
-        debug_info_level!(1,"config {:x} success: {:x}.", t, val);
+        debug_info_level!(1,"config {:x} success: {:x} {:x}.", t, val1, val2);
     }
     
 }
@@ -495,14 +513,14 @@ nkapi!{
                         target_ppn = PhysPageNum::from(vpn.0).into();
                     }
                     MapType::Specified(ppn) => {
-                        target_ppn = ppn.into();
+                        target_ppn = (ppn.0 + i).into();
                     }
                 }
                 if i == 0{
                     first_ppn = target_ppn.into();
                 }
 
-                // debug_info!("in pt {} map ppn 0x{:x} to vpn 0x{:x}", pt_handle, target_ppn.0, vpn.0);
+                //debug_info!("in pt {} map ppn 0x{:x} to vpn 0x{:x}", pt_handle, target_ppn.0, vpn.0);
 
                 if !check_valid(pt_handle as u8, target_ppn, perm) {
                     debug_error!("Invalid allocation!");
@@ -526,7 +544,7 @@ nkapi!{
         pt_operate! (pt_handle, target_pt, {
             for offset in 0..size {
                 let vpn: VirtPageNum = VirtPageNum{0: vpn_n + offset};
-                if let Some(pte) = target_pt.translate(vpn){
+                if let Some(pte) = target_pt.translate(vpn) {
                 
                     // if !check_valid(pt_handle as u8, pte.ppn(), MapPermission::R) {
                     //     debug_info!("deallocate failed: invalid");
@@ -536,11 +554,11 @@ nkapi!{
                     target_pt.unmap(vpn);
                     //debug_info!("dealloc vpn {:?} = ppn {:x}",vpn, pte.ppn().0);
                     outer_frame_dealloc(pte.ppn(),pt_handle as u8);
-    
-                }else{
-                    debug_warn!("[{}] deallocate failed: vpn {:x} not found",pt_handle, vpn.0);
-                    nkapi_return_err!(1);
                 }
+                // else{
+                //     debug_warn!("[{}] deallocate failed: vpn {:x} not found",pt_handle, vpn.0);
+                //     nkapi_return_err!(1);
+                // }
             }
             nkapi_return_ok!();
         });
@@ -562,7 +580,7 @@ nkapi!{
     // while translating COW with write==True, it would start alloc and copy.
 
     fn nkapi_translate(pt_handle: usize, vpn: VirtPageNum, write: usize) -> PhysPageNum {
-        debug_info_level!(3,"nkapi_translate({:x}, {:x}, {:x})", pt_handle, vpn.0, write);
+        //debug_info_level!(3,"nkapi_translate({:x}, {:x}, {:x})", pt_handle, vpn.0, write);
         
         let write = write!=0;
         pt_operate! (pt_handle, target_pt, {
@@ -590,7 +608,7 @@ nkapi!{
 
 nkapi!{
     fn nkapi_translate_va(pt_handle: usize, va: VirtAddr) -> PhysAddr{
-        debug_info_level!(3,"nkapi_translate_va({:x}, {:x})", pt_handle, va.0);
+        //debug_info_level!(3,"nkapi_translate_va({:x}, {:x})", pt_handle, va.0);
         
         pt_operate! (pt_handle, target_pt, {
             if let Some(pa) = target_pt.translate_va(va){

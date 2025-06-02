@@ -3,7 +3,7 @@ use buddy_system_allocator::LockedHeap;
 use crate::debug_error;
 use mmk_arch::*;
 use core::arch::asm;
-static mut HEAP_SPACE: [u8; NK_HEAP_SIZE] = [0; NK_HEAP_SIZE];
+static HEAP_SPACE: [u8; NK_HEAP_SIZE] = [0; NK_HEAP_SIZE];
 
 #[global_allocator]
 pub static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
@@ -15,12 +15,11 @@ pub fn handle_alloc_error(layout: core::alloc::Layout) -> ! {
 }
 
 pub fn init_heap() {
-
+    // HEAP_ALLOCATOR is a unsafe library,
+    // This is the only unsafe code in EKC main part.
     unsafe {
-
         HEAP_ALLOCATOR.lock()
             .init(HEAP_SPACE.as_ptr() as usize, NK_HEAP_SIZE);
-            heap_test();
     }
 }
 

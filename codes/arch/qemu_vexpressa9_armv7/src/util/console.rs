@@ -36,6 +36,16 @@ pub fn print_raw(s: &str) {
     }
 }
 
+pub fn print_raw_chars(s: &[u8]) {
+    for c_ref in s {
+        let c = c_ref.clone();
+        if c == b'\0' {
+            return;
+        }
+        console_putchar(c as usize);
+    }
+}
+
 pub fn print_hex_raw(n: usize) {
     const HEX_DIGITS: &[u8; 16] = b"0123456789abcdef";
 

@@ -11,19 +11,6 @@ SECTIONS
         stext = .;
         *(.text._start)
 
-        . = ALIGN(4K);
-        strampoline = .;
-        *(.text.trampoline)
-        . = ALIGN(4K);
-
-        ssignaltrampoline = .;
-        *(.text.signaltrampoline)
-        . = ALIGN(4K);
-
-        snktrampoline = .;
-        *(.text.nktrampoline)
-        . = ALIGN(4K);
-
         *(.text .text.*)
         . = ALIGN(4K);
         

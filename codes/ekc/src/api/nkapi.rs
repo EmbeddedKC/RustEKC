@@ -15,6 +15,7 @@ pub fn nkapi_time() -> usize{
     }
     return retval0;
 }
+use crate::debug_info;
 
 pub fn nkapi_translate(pt_handle: usize, vpn:VirtPageNum, write: bool) -> Option<PhysPageNum>{
     let retval0: usize;
@@ -132,21 +133,24 @@ pub fn nkapi_set_signal_handler(entry: usize){
         retval0, retval1);
 }
 
-pub fn nkapi_set_allocator_start(begin: usize){
+pub fn nkapi_set_allocator_start(begin: usize, end: usize){
     let mut retval0: usize;
     let mut retval1: usize;
-    entry_gate!(MMKAPI_CONFIG, MMKCFG_ALLOCATOR_START, begin,
+    entry_gate!(MMKAPI_CONFIG, MMKCFG_ALLOCATOR, begin, end,
         retval0, retval1);
     if retval1 != 0 {
         panic!("Error occurs.");
     }
 }
 
-pub fn nkapi_set_allocator_end(end: usize){
+pub fn nkapi_set_shared_range_vaddr(begin: usize, end: usize){
     let mut retval0: usize;
     let mut retval1: usize;
-    entry_gate!(MMKAPI_CONFIG, MMKCFG_ALLOCATOR_END, end,
+    entry_gate!(MMKAPI_CONFIG, MMKCFG_SHARED, begin, end,
         retval0, retval1);
+    // if retval1 != 0 {
+    //     panic!("Error occurs.");
+    // }
 }
 
 

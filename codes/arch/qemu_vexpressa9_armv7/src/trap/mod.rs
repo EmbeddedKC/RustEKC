@@ -40,15 +40,17 @@ pub fn set_next_trigger() {
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct TrapContext {
-    pub x: [usize; 32],
-    pub sepc: usize,
-    pub sstatus: usize
+    pub x: [usize; 16],
+    pub spsr: usize
     
 }
 
 impl TrapContext {
-    pub fn set_sp(&mut self, sp: usize) { self.x[2] = sp; }
-    pub fn get_sp(& self)->usize { self.x[2] }
+    pub fn set_sp(&mut self, sp: usize) { self.x[XREG_SP] = sp; }
+    pub fn get_sp(& self)->usize { self.x[XREG_SP] }
+
+    pub fn set_ra(&mut self, ra: usize) { self.x[XREG_RA] = ra; }
+    pub fn get_ra(& self)->usize { self.x[XREG_RA] }
 
     pub fn app_init_context(
         // 只有三个函数调用过这个方法，在初始化的时候
@@ -64,11 +66,11 @@ impl TrapContext {
             // sstatus::set_spp(SPP::User);
             // let sstatus = sstatus::read();
             let mut cx = Self {
-                x: [0; 32],
-                sepc: entry,
-                sstatus: 0
+                x: [0; 16],
+                spsr: 0
             };
             cx.set_sp(sp);
+            cx.set_ra(entry);
             cx
         }
         
@@ -87,14 +89,6 @@ fn mmk_trap_handler(tf: &mut TrapContext, kind: usize){
     return;
 }
 
-
-#[no_mangle]
-fn invalid_exception(){ }
-#[no_mangle]
-fn handle_sync_exception(){ }
-#[no_mangle]
-fn handle_irq_exception(){ }
-
 pub fn init(){
 
     //CNTP_CTL_EL0.write(CNTP_CTL_EL0::ENABLE::SET);
@@ -103,10 +97,9 @@ pub fn init(){
         fn mmk_exception_vector_base();
     }
 
-    crate::arch_set_INTR_handler(mmk_exception_vector_base as usize);
-    //VBAR_EL1.set(mmk_exception_vector_base as usize as _);
-    //VBAR_EL1.set(TRAMPOLINE as usize as _);
-
+    //crate::arch_set_INTR_handler(mmk_exception_vector_base as usize);
+    crate::arch_set_INTR_handler(TRAMPOLINE as usize);
+    
     //set_next_trigger();
     
     //gicv2::init();

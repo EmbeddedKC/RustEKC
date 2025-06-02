@@ -33,6 +33,7 @@ pub use util::pl011::console_getchar as arch_getchar;
 pub use util::console::print as arch_print;
 pub use util::psci::shutdown as arch_shutdown;
 pub use util::console::print_raw;
+pub use util::console::print_raw_chars;
 pub use config::arch_phys_to_virt as arch_phys_to_virt;
 pub use config::arch_virt_to_phys as arch_virt_to_phys;
 
@@ -89,14 +90,16 @@ pub fn arch_get_cpu_id() -> usize{
 }
 
 pub fn arch_get_cpu_time() -> usize {
-    let time: usize;
-    unsafe{
-            core::arch::asm!(
-                "dsb sy; isb; MRC p15, 0, r0, c14, c0, 2",
-                out("r0") time
-            );
-        }
-    time
+    //let time: usize;
+    // unsafe{
+    //         core::arch::asm!(
+    //             "dsb sy; isb; MRC p15, 0, r0, c14, c0, 2",
+    //             out("r0") time
+    //         );
+    //     }
+    //time
+    // not implemented.
+    return 0x233;
 }
 
 pub fn arch_flush_tlb(uid: usize) {

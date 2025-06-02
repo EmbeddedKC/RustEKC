@@ -30,11 +30,11 @@ pub fn service_init(){
 #[macro_export]
 macro_rules! nkapi_return_ok {
     () => {
-        debug_info_level!(3, "nkapi_exit_ok(0)");
+        //debug_info_level!(3, "nkapi_exit_ok(0)");
         return (0,0)
     };
     ($ret: expr) => {
-        debug_info_level!(3, "nkapi_exit_ok({:x})",usize::from($ret));
+        //debug_info_level!(3, "nkapi_exit_ok({:x})",usize::from($ret));
         return ($ret.into(), 0 as usize)
     }
 }

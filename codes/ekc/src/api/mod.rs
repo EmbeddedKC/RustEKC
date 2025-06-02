@@ -43,10 +43,10 @@ pub const MMKAPI_INQUIRE_MEMBLOCK: usize = 17;
 pub const MMKCFG_S_DELEGATE: usize = 0;
 pub const MMKCFG_U_DELEGATE: usize = 1; 
 pub const MMKCFG_SIGNAL: usize = 2;
-pub const MMKCFG_ALLOCATOR_START: usize = 3;
+pub const MMKCFG_ALLOCATOR: usize = 3;
 pub const MMKCFG_ALLOCATOR_END: usize = 4;
 
-pub const MMKCFG_MIN_PFN: usize = 5;
+pub const MMKCFG_SHARED: usize = 5;
 
 ///////////////////////////////////
 

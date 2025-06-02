@@ -1,3 +1,8 @@
+###########################
+#   TODO: This module is not finished.
+#   It should be put into .text.trampoline with delegation.
+##########################
+
 .macro SAVE_REGS
     sub     sp, sp, 34 * 8
     stp     x0, x1, [sp]

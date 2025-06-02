@@ -116,33 +116,6 @@ extern "Rust" {
 }
 
 use crate::arch_early_init;
-
-// #[naked]
-// #[no_mangle]
-// #[link_section = ".text._start"]
-// unsafe extern "C" fn _start() -> ! {
-//     // PC = 0x4008_0000
-//     asm!("
-//         cpsid if
-
-//         mrs r0, cpsr
-//         bic r0, r0, #0x1F 
-//         orr r0, r0, #0x13 
-//         msr cpsr_c, r0
-
-//         LDR     R0, =0xFFFFFFFF
-//         MCR     p15, 0, R0, c3, c0, 0
-
-//         MOV     R0, 0
-
-//         ldr     sp, =boot_stack_top
-//         mov     r11, sp
-
-//         bl      estart", 
-//         options(noreturn),
-//     )
-
-// }
 use crate::print_raw;
 
 #[no_mangle]

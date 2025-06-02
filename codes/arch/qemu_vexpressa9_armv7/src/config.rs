@@ -44,29 +44,9 @@ pub const MMU_PAGEWALK: VpnIndexes = [8, 12];
 pub const MMU_PAGETABLE_SIZE: VpnIndexes = [4*256, 4*4096];
 
 ///////////////////////////////////
-//// aarch64 platform config
+//// platform mem layout config
 ////
 /// 
-pub const SIGNAL_TRAMPOLINE: usize = 0x10000000 - PAGE_SIZE;
-
-pub const TRAP_CONTEXT: usize = SIGNAL_TRAMPOLINE - PAGE_SIZE;
-
-pub const USER_STACK: usize = TRAP_CONTEXT - PAGE_SIZE;
-
-pub const USER_STACK_SIZE_MIN: usize = PAGE_SIZE * 4;
-
-pub const USER_STACK_SIZE: usize = PAGE_SIZE * 16;
-
-pub const USER_HEAP_SIZE: usize = PAGE_SIZE * 32;
-
-pub const NK_STACK_SIZE: usize = PAGE_SIZE * 2;
-
-pub const NK_HEAP_SIZE: usize = PAGE_SIZE * 0x200;
-
-pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 2;
-
-pub const KERNEL_HEAP_SIZE: usize = PAGE_SIZE * 0x200;
-
 pub const NKSPACE_START: usize = 0x60010000;
 
 pub const NKSPACE_END: usize = 0x60600000;
@@ -99,6 +79,30 @@ pub const MMIO: &[(usize, usize)] = &[
     (arch_phys_to_virt(0x0203_1000), 0x1000),      /* DMIC      */
 ];
 
+
+///////////////////////////////////
+//// platform config
+////
+/// 
+pub const SIGNAL_TRAMPOLINE: usize = 0x10000000 - PAGE_SIZE;
+
+pub const TRAP_CONTEXT: usize = SIGNAL_TRAMPOLINE - PAGE_SIZE;
+
+pub const USER_STACK: usize = TRAP_CONTEXT - PAGE_SIZE;
+
+pub const USER_STACK_SIZE_MIN: usize = PAGE_SIZE * 4;
+
+pub const USER_STACK_SIZE: usize = PAGE_SIZE * 16;
+
+pub const USER_HEAP_SIZE: usize = PAGE_SIZE * 32;
+
+pub const NK_STACK_SIZE: usize = PAGE_SIZE * 2;
+
+pub const NK_HEAP_SIZE: usize = PAGE_SIZE * 0x200;
+
+pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 2;
+
+pub const KERNEL_HEAP_SIZE: usize = PAGE_SIZE * 0x200;
 
 ///////////////////////////////////
 //// aarch32 api config

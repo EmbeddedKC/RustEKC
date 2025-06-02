@@ -55,27 +55,25 @@
 .endm
 
 .macro SAVE_CTX_TO_ADDR a
-    .set n, 0
-    .rept 15
-        SAVE_STACK %n \a
-        # STR r%n, [\a, #%n*8]
-        .set n, n+1
-    .endr
+    stmia \a, {r0-r14}
+    mrs r10, SPSR
+    STR r10, [\a, #16*USIZE_WIDTH]
+    LDR r10, [\a, #10*USIZE_WIDTH]
 .endm
 
 .macro LOAD_CTX_FROM_ADDR a
     MOV r14, \a
-    .set n, 0
-    .rept 15
-        LOAD_STACK %n r14
-        # LDR r%n, [r9, #%n*8]
-        .set n, n+1
-    .endr
+    LDR r10, [r14, #16*USIZE_WIDTH]
+    msr SPSR, r10
+
+    ldmia r14, {r0-r13}
+    ldr r14, [r14, #14*USIZE_WIDTH]
 .endm
 
 .include "src/asm/cpu.S"
 
-.include "src/asm/entry.S"
 .include "src/asm/nk_gate.S"
 .include "src/trap/trap.S"
-# .include "src/trap/trap_signal.S"
+.include "src/trap/trap_signal.S"
+
+.include "src/asm/entry.S"

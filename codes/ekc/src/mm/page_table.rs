@@ -84,7 +84,7 @@ impl PageTableRecord {
 
         let pt_siz = MMU_PAGETABLE_SIZE[MMU_PAGETABLE_SIZE.len()-1];
         let ppn = frame_alloc_multiple(pt_siz/PAGE_SIZE, pt_siz/PAGE_SIZE).unwrap();
-        debug_info!("page table [{}] record {}: {:x}", id, pt_siz/PAGE_SIZE, ppn.0);
+        debug_info!("page table [{}] has pgd: {:x}", id, ppn.0);
         PageTableRecord {
             pt_id: id,
             root_ppn: ppn,
@@ -248,7 +248,7 @@ impl PageTableRecord {
     #[allow(unused)]
     pub fn unmap(&mut self, vpn: VirtPageNum) {
         let pte = self.find_pte_create(vpn);
-        assert!(pte_is_valid(pte), "vpn {:?} is invalid before unmapping", vpn);
+        //assert!(pte_is_valid(pte), "vpn {:?} is invalid before unmapping", vpn);
         let ppn = pte.ppn();
         *pte = PageTableEntry::empty();
         // if vpn.0 != ppn.0 {
@@ -287,11 +287,13 @@ impl PageTableRecord {
 
    pub fn map_kernel_shared(&mut self, kernel_pagetable: &mut PageTableRecord){
 
+        let cfg = CONFIGDATA();
         // insert shared pte of os
-        let idex_begin: usize = NKSPACE_END / PAGE_SIZE;
-        let idex_end: usize = OKSPACE_END / PAGE_SIZE;
+        let idex_begin: usize = cfg.shared_start_vaddr / PAGE_SIZE;
+        let idex_end: usize = cfg.shared_end_vaddr / PAGE_SIZE;
+        debug_info!("map shared mem space: {:x} {:x}", idex_begin, idex_end);
         for i in idex_begin..idex_end{
-            if i % 0x1000 == 0 {
+            if i % (1<<MMU_PAGEWALK[0]) == 0 {
                 self.map_share(kernel_pagetable, i.into(), 1);
             }
         }

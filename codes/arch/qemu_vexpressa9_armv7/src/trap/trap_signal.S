@@ -1,8 +1,14 @@
-.altmacro
-    .section .text.signaltrampoline
-    .globl __signal_trampoline
-    .align 2
-__signal_trampoline:
+.section .text
+
+
+.align 12
+
+.globl ssignaltrampoline;
+
+ssignaltrampoline:
     # ecall sys_sigreturn
-    addi	a7, zero, 139
-    ecall
+    mov     r7, #139
+    svc 0
+
+
+.align 12

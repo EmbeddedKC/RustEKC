@@ -42,6 +42,8 @@ pub type VpnIndexes = [usize; 4];
 // MMU pagewalk rules: [20:12]=9, [29-21]=9,....
 pub const MMU_PAGEWALK: VpnIndexes = [9,9,9,9];
 
+//pagetable size: 8(usize)*(2^9)
+pub const MMU_PAGETABLE_SIZE: VpnIndexes = [8*512, 8*512, 8*512, 8*512];
 
 ///////////////////////////////////
 //// aarch64 platform config

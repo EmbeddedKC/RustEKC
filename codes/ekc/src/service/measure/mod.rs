@@ -67,15 +67,7 @@ pub fn app_handler(id: usize, buf: &mut [u8; 32]){
 }
 
 pub fn gethash(out_ptr: &mut [u8; 32]){
-    //let mut hasher = Sha3::v256();
     unsafe{
-
-        // while a < target{
-        //     let blk = &*(a as *mut [u8; 32]);
-        //     out_ptr
-        //     hasher.update(blk);
-        //     a = a + 32;
-        // }
         let blk = &*(OKSPACE_START as *mut [u8; PAYLOAD_IMG_SIZE*1024]);
         
         use rs_sha256::{HasherContext, Sha256Hasher};

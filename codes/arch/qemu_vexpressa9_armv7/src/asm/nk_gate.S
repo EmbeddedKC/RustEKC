@@ -1,6 +1,4 @@
-.section .text.nktrampoline
-
-.globl nk_gate
+.section .text
 
     # 入参 r10 nkapi handler
     # 入参 r11~r15 params
@@ -14,7 +12,12 @@
     # 低地址
     # #####################################
 
+.align 12
+.globl snktrampoline
+.globl nk_gate
+
 nk_gate:
+snktrampoline:
 
     STMFD SP!, {R10-R12}
 
@@ -126,9 +129,9 @@ nk_bypass:
     pop {r4, r5}
 
     //update the return value
-    //Note: stack struct = CPSR, lr, r0, r1...r12
-    STR r0, [sp, #8]
-    STR r1, [sp, #8]
+    //Note: stack struct = (low) lr, CPSR, r12...r0 (high)
+    STR r0, [sp, #2*4]
+    STR r1, [sp, #3*4]
 
     RESTORE_REGS
 
@@ -170,17 +173,18 @@ nk_exit:
     # dsb sy
     # isb
 
-    # enable interrupt (Load OS's CPSR)
-    LDR r7, [r8, #PROXY_OS_CPSR]
-    MSR cpsr, r7
-
-    # addr = 0x*130
-    # load all outer kernel registers from proxy, 包括栈指针
-    PROXYCONTEXT r9
-    ADD r9, r9, #PROXY_OS_REGS
-    LOAD_CTX_FROM_ADDR r9 
+    ADD r8, r8, #PROXY_OS_REGS
+    LOAD_CTX_FROM_ADDR r8
     
+    # enable interrupt (Load OS's CPSR)
+    PROXYCONTEXT r8
+    LDR r8, [r8, #PROXY_OS_CPSR]
+    MSR cpsr_c, r8
+
     # addr = 0x*170
     # jump back, according to outer kernel's ra
     BX lr
 
+.ltorg
+
+.align 12

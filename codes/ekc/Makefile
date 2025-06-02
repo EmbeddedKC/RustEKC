@@ -15,17 +15,7 @@ SDCARD := /dev/sdb
 APPS := ../user/src/bin/*
 TOP := ../../k210.bin
 
-# Binutils
-# OBJDUMP := rust-objdump --arch-name=riscv64
-# OBJCOPY := rust-objcopy --binary-architecture=riscv64
-# OBJDUMP := rust-objdump --arch-name=aarch64
-# OBJCOPY := rust-objcopy --binary-architecture=aarch64
-# OBJDUMP := rust-objdump --arch-name=armv7a
-# OBJCOPY := rust-objcopy --binary-architecture=armv7a
-# OBJCOPY := arm-none-eabi-objcopy
-OBJCOPY := arm-none-eabi-objcopy
 
-# Disassembly
 DISASM ?= -x
 
 build: $(KERNEL_BIN)
@@ -63,10 +53,7 @@ tmp_run: build
 	cd $(ARCH_PATH) && sudo sh run.sh $(KERNEL_BIN) $(PAYLOAD_BIN)
 
 tmp_debug: build
-	cd $(ARCH_PATH) && sudo sh debug.sh $(KERNEL_ELF) $(KERNEL_BIN) $(PAYLOAD_BIN)
-
-tmp_payload_debug: build
-	cd $(ARCH_PATH) && sudo sh debug.sh $(PAYLOAD_ELF) $(KERNEL_BIN) $(PAYLOAD_BIN)
+	cd $(ARCH_PATH) && sudo sh debug.sh $(KERNEL_ELF) $(KERNEL_BIN) $(PAYLOAD_BIN) $(PAYLOAD_ELF) 
 
 clean:
 	@cargo clean

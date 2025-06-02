@@ -5,24 +5,19 @@ use tiny_keccak::Hasher;
 use tiny_keccak::Sha3;
 use alloc::format;
 use crate::mmk_arch::TrapContext;
+use crate::util::*;
 
 pub const MMKCALL_ECHO: usize = 0x400;
 pub const MMKCALL_MEASURE: usize = 0x401;
 pub const MMKCALL_PKCS: usize = 0x402;
 pub const MMKCALL_LOGGING: usize = 0x403;
 
-
 ///
 /// trap in NK would be handled here.
 /// 
-pub fn nk_trap_handler(mut ctx_addr: usize) -> usize {
-    ctx_addr = TRAP_CONTEXT;
-    if let Some(pa) = nkapi_translate_va(pt_current(), ctx_addr.into()){
-        unsafe{
-            let ctx: &mut TrapContext = &mut *(pa.0 as *mut TrapContext); 
-            ctx.sepc += 4;
-            return nk_syscall_impl(ctx);
-        }
+pub fn nk_trap_handler(usr_ctx: &mut TrapContext) -> usize {
+    if let Some(ctx) = translate_from_user_mut(usr_ctx) {
+        return nk_syscall_impl(ctx);
     }else{
         panic!("invalid trap context!");
     }

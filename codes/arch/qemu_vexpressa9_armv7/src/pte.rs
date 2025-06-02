@@ -75,8 +75,8 @@ impl PTEFlags {
     fn mem_type(&self) -> MemType {
         let idx = (self.bits() & Self::CACHEABLE.bits()) == 0;
         match idx {
-            True => MemType::Device,
-            False => MemType::Normal,
+            true => MemType::Device,
+            false => MemType::Normal,
             _ => panic!("Invalid memory attribute index"),
         }
     }

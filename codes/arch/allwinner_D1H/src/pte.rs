@@ -33,6 +33,7 @@ impl From<PTEFlags> for MapPermission {
 	}
 }
 
+
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct PageTableEntry {
@@ -79,8 +80,6 @@ impl PageTableEntry {
     pub fn ppn(&self) -> PhysPageNum {
         (self.bits >> 10 & ((1usize << 44) - 1)).into()
     }
-
-
 
     pub fn perm(&self) -> MapPermission {
         self.flags().into()
