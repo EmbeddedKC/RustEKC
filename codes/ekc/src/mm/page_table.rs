@@ -293,13 +293,31 @@ impl PageTableRecord {
         let idex_end: usize = cfg.shared_end_vaddr / PAGE_SIZE;
         debug_info!("map shared mem space: {:x} {:x}", idex_begin, idex_end);
         for i in idex_begin..idex_end{
+            //if i % (1<<MMU_PAGEWALK[0]) == 0 {
+                self.map_share(kernel_pagetable, i.into(), 1);
+            //}
+        }
+
+        //share trampoline and kernel stack.
+        debug_info!("map shared trampoline space: {:x}", TRAMPOLINE / PAGE_SIZE);
+        
+        self.map_share(kernel_pagetable, (TRAMPOLINE / PAGE_SIZE).into(), 1);
+        
+        debug_info!("map shared mmio space: {:x} {:x}", 0xf1000, 0xf1080);
+        for i in 0xf1000..0xf1080{
             if i % (1<<MMU_PAGEWALK[0]) == 0 {
                 self.map_share(kernel_pagetable, i.into(), 1);
             }
         }
 
-        //share trampoline and kernel stack.
-        self.map_share(kernel_pagetable, (TRAMPOLINE / PAGE_SIZE).into(), 1);
+        debug_info!("map shared mmio space: {:x} {:x}", 0xf8000, 0xf9000);
+        for i in 0xf8000..0xf9000{
+            if i % (1<<MMU_PAGEWALK[0]) == 0 {
+                self.map_share(kernel_pagetable, i.into(), 1);
+            }
+        }
+        
+        
         //self.map_share(kernel_pagetable, (NK_TRAMPOLINE / PAGE_SIZE).into(), 3);
         //self.map_share(kernel_pagetable, (PROXY_CONTEXT / PAGE_SIZE).into(), 3);
         //self.map_share(kernel_pagetable, (SIGNAL_TRAMPOLINE / PAGE_SIZE).into(), 3);
@@ -316,7 +334,7 @@ impl PageTableRecord {
         crate::arch_set_root_pt(self.pt_id, 
             self.root_ppn);
         crate::arch_flush_tlb(self.pt_id);
-        debug_info!("MMK pagetable activated.");
+        debug_info!("EKC pagetable activated.");
     }
 
 }

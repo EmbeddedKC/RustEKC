@@ -26,7 +26,7 @@ pub fn MMK_API(id: usize) -> *mut usize{
     let _MMKAPI_TABLE: usize = METADATA_PAGE + 0x800;
 
     if id >= 128 {
-        panic!("receive an illegal mmk api id.");
+        panic!("receive an illegal ekc api id.");
     }
     let addr = (_MMKAPI_TABLE + id*8) as *mut usize;
     return addr;

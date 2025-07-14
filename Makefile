@@ -8,20 +8,28 @@ export MODE ?= debug
 #######
 ### edit PAYLOAD - Select a demo binary file in $(cwd)/payloads directory.
 #######
-export PAYLOAD ?= $(cwd)/payloads/logging_test_qemu_aarch64.bin
+
+# export PAYLOAD ?= $(cwd)/payloads/tinyLinux_qemu_vexpressa9_arm32.bin
+# export PAYLOAD ?= $(cwd)/payloads/logging_test_qemu_aarch64.bin
+# export PAYLOAD ?= $(cwd)/payloads/freertos_blinky_qemu_aarch64.bin
+export PAYLOAD ?= $(cwd)/payloads/freertos_ssh_qemu_aarch64.bin
+# export PAYLOAD ?= $(cwd)/payloads/rcc_mmk_qemu_virt_riscv64.bin
 
 #######
 ### edit BOARD - Select a platform. Platform list can be found in $(cwd)/codes/arch.
 #######
+
 # export BOARD ?= qemu_vexpressa9_armv7
 # export BOARD ?= qemu_virt_riscv64
-# export BOARD ?= allwinner_D1H
 export BOARD ?= qemu_virt_aarch64
+# export BOARD ?= allwinner_D1H
+# export BOARD ?= k210
 # export BOARD ?= raspberry_pi4
 
 #######
 ### edit TARGET - Your installed cross-platform toolchain and binutils. 
 #######
+
 # export TARGET = armv7a-none-eabi
 export TARGET = aarch64-unknown-none
 # export TARGET = riscv64gc-unknown-none-elf
@@ -78,7 +86,7 @@ linux:
 	qemu-system-arm\
 		-nographic \
 		-kernel $(MMK_BIN) \
-		-device loader,file=payloads/tinyLinux_qemu_vexpressa9_arm32.bin,addr=0x60600000 \
+		-device loader,file=zImage,addr=0x60800000 \
 		-machine vexpress-a9 -cpu cortex-a9
 	
 linux_debug:
@@ -86,10 +94,10 @@ linux_debug:
 	"echo '[qemu debug]' && qemu-system-arm -s -S \
                 -machine vexpress-a9 -cpu cortex-a9 \
                 -nographic \
-                -kernel mmk_std.bin \
-		        -device loader,file=zImage_std,addr=0x60800000 \
+                -kernel $(MMK_BIN) \
+		        -device loader,file=zImage,addr=0x60800000 \
 	" \
-	&& tmux split-window -h "gdb-multiarch vmlinux_std -ex 'target remote localhost:1234'" \
+	&& tmux split-window -h "gdb-multiarch vmlinux -ex 'target remote localhost:1234'" \
 	&& tmux -2 attach-session -d \
 	&& tmux source-file ~/.tmux.conf
 

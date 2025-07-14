@@ -65,7 +65,7 @@ fn default_delegate(){
     let sepc = sepc::read();
     let scause = scause::read();
     let stval = stval::read();
-    panic!("Default trap occur in MMK from 0x{:x}. stval:0x{:x} cause:0x{:x}", sepc, stval, scause.bits());
+    panic!("Default trap occur in EKC from 0x{:x}. stval:0x{:x} cause:0x{:x}", sepc, stval, scause.bits());
 }
 
 

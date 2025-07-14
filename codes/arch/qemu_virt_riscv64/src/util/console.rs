@@ -12,6 +12,11 @@ impl Write for Stdout {
     }
 }
 
+pub fn print_raw_chars(chars: &[u8]) {
+    for c in chars {
+        console_putchar(c.clone() as usize);
+    }
+}
 pub fn print(args: fmt::Arguments) {
     //here accessible
     Stdout.write_fmt(args).unwrap();

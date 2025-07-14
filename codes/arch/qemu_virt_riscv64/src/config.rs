@@ -72,6 +72,22 @@ pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 2;
 pub const KERNEL_HEAP_SIZE: usize = PAGE_SIZE * 0x200;
 
 ///////////////////////////////////
+//// api config
+
+pub const SPECIAL_AREA: usize = usize::MAX - 0x1000 + 1;
+
+pub const NK_TRAMPOLINE: usize = SPECIAL_AREA;
+
+pub const TRAMPOLINE: usize = SPECIAL_AREA - PAGE_SIZE;
+ 
+pub const METADATA_PAGE: usize = SPECIAL_AREA - 2*PAGE_SIZE;
+ 
+pub const PROXY_CONTEXT: usize = METADATA_PAGE;
+pub const CONFIG_DATA: usize = METADATA_PAGE + 0x400;
+pub const MMKAPI_TABLE: usize = METADATA_PAGE + 0x800;
+
+
+///////////////////////////////////
 //// platform mem layout config
 /// 
 pub const SIGNAL_TRAMPOLINE: usize = 0x100000000 - PAGE_SIZE;

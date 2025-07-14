@@ -53,7 +53,7 @@ pub const NKSPACE_END: usize = 0x60600000;
 
 pub const OKSPACE_START: usize = 0x60600000;
 
-pub const OKSPACE_END: usize = 0x64000000;
+pub const OKSPACE_END: usize = 0x6c000000;
 
 pub const CLOCK_FREQ: usize = 24000000;
 

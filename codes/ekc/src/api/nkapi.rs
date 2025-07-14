@@ -1,6 +1,7 @@
 use crate::address::*;
 use crate::flags::*;
 use core::arch::asm;
+use mmk_arch::NK_TRAMPOLINE;
 
 #[macro_use]
 use mmk_arch::entry_gate;

@@ -3,7 +3,6 @@
 
 use core::arch::global_asm;
 
-use mmi::{CONFIGDATA, PROXYCONTEXT, PROXY_CONTEXT, TRAMPOLINE};
 use riscv::register::{satp, sepc, stvec, scause, stval};
 use riscv::register::sstatus::{Sstatus, self, SPP};
 use crate::config::*;
@@ -71,13 +70,20 @@ fn default_delegate(){
 
 pub fn init(){
     unsafe {
-	let cfg = CONFIGDATA();
-        cfg.kernel_trap_handler = default_delegate as usize;
+	    //let cfg = CONFIGDATA();
+        //cfg.kernel_trap_handler = default_delegate as usize;
         //stvec::write(default_delegate as usize, stvec::TrapMode::Direct);
+        core::arch::asm!("csrw stvec, a0", in("a0") TRAMPOLINE-(__alltraps as usize)+(_ktrap as usize));
+	    //stvec::write(TRAMPOLINE-(__alltraps as usize)+(_ktrap as usize));
         
-	    stvec::write(TRAMPOLINE-(__alltraps as usize)+(_ktrap as usize), stvec::TrapMode::Direct);
-        PROXYCONTEXT().__deleted = TRAMPOLINE - __alltraps as usize + __restore as usize;
-    
+        let _PROXY_CONTEXT: usize = METADATA_PAGE;
+        unsafe{ 
+            let PROXYCONTEXT = &mut *(_PROXY_CONTEXT as usize 
+            as *mut usize 
+            as *mut ProxyContext) ;
+            PROXYCONTEXT.__deleted = TRAMPOLINE - __alltraps as usize + __restore as usize;
+        }
+        
     }
 }
 

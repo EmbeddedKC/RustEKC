@@ -8,6 +8,9 @@ extern crate bitflags;
 mod util;
 mod trap;
 
+#[macro_use]
+pub mod nk_gate;
+
 pub mod pte;
 pub mod config;
 
@@ -28,6 +31,7 @@ pub use util::sbi::console_putchar as arch_putchar;
 pub use util::sbi::console_getchar as arch_getchar;
 pub use util::sbi::shutdown as arch_shutdown;
 pub use util::console::print as arch_print;
+pub use util::console::print_raw_chars as print_raw_chars;
 pub use config::arch_phys_to_virt_addr as arch_phys_to_virt_addr;
 pub use config::arch_virt_to_phys as arch_virt_to_phys;
 
@@ -45,7 +49,11 @@ pub fn arch_get_root_pt(pt_id: usize, ppn: PhysPageNum) -> usize{
 
 pub fn arch_set_root_pt(pt_id: usize, ppn: PhysPageNum){
     let token: usize = (8usize << 60) | ((pt_id & 0xff) << 44) | (ppn.0);
-    satp::write(token);
+    //satp::write(token);
+    unsafe {
+        core::arch::asm!("csrw satp, a0", 
+                        in("a0") token);
+    }
     arch_flush_tlb(0);
 }
 
@@ -99,7 +107,7 @@ pub fn arch_final_init() -> usize{
     unsafe{
         core::arch::asm!("jr x31", 
         //in("x31") nk_exit as usize,
-        in("x31") mmi::config::NK_TRAMPOLINE - nk_entry as usize + nk_exit as usize,
+        in("x31") config::NK_TRAMPOLINE - nk_entry as usize + nk_exit as usize,
         in("x10") 0 );
         panic!("not reachable");
     }
@@ -107,20 +115,23 @@ pub fn arch_final_init() -> usize{
 
 
 pub fn arch_scan_instruction(pa: PhysAddr) {
-    let data: &mut [u32; 1024] = &mut *(pa.0 as *mut [u32; 1024]);
+    unsafe{
+        let data: &mut [u32; 1024] = &mut *(pa.0 as *mut [u32; 1024]);
         for instruction in 0..1024 {
             let csr = data[instruction] >> 20;
             let opcode = data[instruction] & 0b1111111;
             if opcode == 0x73 {
                 if csr == 0x180 {
-                    debug_error!("modify satp instruction found in 0x{:x}. Removed.",ppn.0);
+                    arch_debug_info!("modify satp instruction found in 0x{:x}. Removed.",pa.0);
                     data[instruction] = 0b0010011; //addi zero, zero, 0
                     
                 }else if csr == 0x105 {
-                    debug_error!("modify stvec instruction found in 0x{:x}. Removed.",ppn.0);
+                    arch_debug_info!("modify stvec instruction found in 0x{:x}. Removed.",pa.0);
                     data[instruction] = 0b0010011; //addi zero, zero, 0
                     
                 }
             }
         }
+    }
+
 }

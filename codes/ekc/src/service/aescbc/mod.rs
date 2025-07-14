@@ -120,7 +120,7 @@ macro_rules! aes_operate {
 
 nkapi!{
     fn app_handler(id: usize, session: usize, buf_n: usize, siz: usize) -> usize {
-        debug_info_level!(3,"nkapi_aescbc({:x}, {:x}, {:x}, {:x})", id, session, buf_n, siz);
+        debug_info_level!(3,"ekcapi_aescbc({:x}, {:x}, {:x}, {:x})", id, session, buf_n, siz);
 
         unsafe{
             //let mut out_buf_tmp: &mut [u8] = &mut *(&mut out_buf_tmp_alloc as *mut [u8; 4096] as usize as *mut [u8; 256]);;
@@ -174,7 +174,8 @@ nkapi!{
                 }
                 1 => {
                     if siz % 16 != 0 || siz < 0 || siz > 32768 {
-                        panic!("Invalid data input size in AES: {:x}", siz);
+                        debug_info_level!(0,"Invalid data input size in AES: {:x}", siz);
+                        nkapi_return_err!(1);
                     }
                     let buf: &mut [u8] = &mut *(buf_n as *mut [u8; 65539]);
                     let mut time: usize = 0;
@@ -183,7 +184,7 @@ nkapi!{
                     });
 
                     print!("aes enc time cost: {}\n", time);
-                    print!("warn: if you are evaluating SSH time cost, please comment this print.\n");
+                    print!("warn: if you are evaluating SSH time cost, please comment this message.\n");
                 
                     // aes256_cbc_encrypt(mod_buf, siz, &key, &iv);
                     // debug_info!("Encrypted: ");
@@ -194,7 +195,8 @@ nkapi!{
                 }
                 2 => {
                     if siz % 16 != 0 || siz < 0 || siz > 32768 {
-                        panic!("Invalid data input size in AES: {:x}", siz);
+                        debug_info_level!(0,"Invalid data input size in AES: {:x}", siz);
+                        nkapi_return_err!(1);
                     }
                     let buf: &mut [u8] = &mut *(buf_n as *mut [u8; 65539]);
                     let mut time: usize = 0;
@@ -209,7 +211,7 @@ nkapi!{
                     // print!("\n");
                     
                     //print!("aes dec time cost: {}\n", time);
-                    //print!("warn: if you are evaluating SSH time cost, please comment this print.\n");
+                    //print!("warn: if you are evaluating SSH time cost, please comment this message.\n");
                 }
                 _ => {
 

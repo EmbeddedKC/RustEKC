@@ -179,7 +179,7 @@ impl MemorySet {
         // map trampoline
         memory_set.map_trampoline();  //映射trampoline
 
-        debug_info!("MMK page table init.");
+        debug_info!("EKC page table init.");
 
         memory_set
     }

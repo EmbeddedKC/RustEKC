@@ -6,7 +6,7 @@ export PAYLOAD_ENTRY_PA=0x80800000
 export FIRMWARE_ENTRY_PA=0x80000000
 
 echo "qemu starting..."
-qemu-system-riscv64 \
+./qemu-system-riscv64-4.2.0 \
                 -machine virt -nographic \
                 -bios ./opensbi_fw_jump_qemu.bin \
                 -device loader,file=$1,addr=${MMK_ENTRY_PA} \

@@ -71,7 +71,7 @@ pub fn init() {
     debug_info!("kernel table activated and init success.");
 
     init_vec();
-    debug_info!("MMK API vector table initialized.");
+    debug_info!("EKC API vector table initialized.");
 }
 
 lazy_static! {
@@ -184,7 +184,7 @@ pub fn pt_current() -> usize {
 */
 nkapi!{
     fn nkapi_time() -> usize {
-        debug_info_level!(3,"nkapi_time()");
+        debug_info_level!(3,"ekcapi_time()");
         let mut time:usize = arch_get_cpu_time();
         
         nkapi_return_ok!(time);
@@ -193,7 +193,7 @@ nkapi!{
 
 nkapi!{
     fn nkapi_config(t: usize, val1: usize, val2: usize, val3: usize){
-        //debug_info_level!(3,"nkapi_config({:x}, {:x})", t, val);
+        //debug_info_level!(3,"ekcapi_config({:x}, {:x})", t, val);
         let conf = CONFIGDATA();
         match t{
             MMKCFG_S_DELEGATE =>{
@@ -243,7 +243,7 @@ nkapi!{
 
 nkapi!{
     fn nkapi_print_pt(pt_handle: usize, from: usize, to: usize){
-        debug_info_level!(3,"nkapi_print_pt({:x}, {:x}, {:x})", pt_handle, from, to);
+        debug_info_level!(3,"ekcapi_print_pt({:x}, {:x}, {:x})", pt_handle, from, to);
         //pt_operate! (pt_handle, target_pt, {
             // debug_info!("=========[print pt {}]==========", pt_handle);
             //target_pt.trace_address((from<<12).into());
@@ -253,7 +253,7 @@ nkapi!{
 
 nkapi!{
     fn nkapi_fork_pte(pt_handle: usize, pt_child: usize, vpn_o: VirtPageNum, size: usize, cow: usize) -> PhysPageNum{
-        debug_info_level!(3,"nkapi_fork_pte({:x}, {:x}, {:x}, {:x}, {:x})", pt_handle, pt_child, vpn_o.0, size, cow);
+        debug_info_level!(3,"ekcapi_fork_pte({:x}, {:x}, {:x}, {:x}, {:x})", pt_handle, pt_child, vpn_o.0, size, cow);
         
         let cow = cow!=0;
 
@@ -322,7 +322,7 @@ nkapi!{
 
 nkapi!{
     fn nkapi_pt_init(pt_handle: usize, re_gen: usize) -> usize {
-        debug_info_level!(3,"nkapi_pt_init({:x}, {:x})", pt_handle, re_gen);
+        debug_info_level!(3,"ekcapi_pt_init({:x}, {:x})", pt_handle, re_gen);
         
         if pt_handle == 0xff {
             debug_warn!("Uid {:x} is preserved. Create failed.",pt_handle);
@@ -411,7 +411,7 @@ nkapi!{
 
 nkapi!{
     fn nkapi_set_permission(pt_handle: usize, vpn: VirtPageNum, flags: usize){
-        debug_info_level!(3,"nkapi_set_permission({:x}, {:x}, {:x})", pt_handle, vpn.0, flags);
+        debug_info_level!(3,"ekcapi_set_permission({:x}, {:x}, {:x})", pt_handle, vpn.0, flags);
         
         // find target pagetable
         pt_operate! (pt_handle, target_pt, {
@@ -436,7 +436,7 @@ extern "C"{
 
 nkapi!{
     fn nkapi_pt_destroy(pt_handle: usize) {
-        debug_info_level!(3,"nkapi_pt_destroy({:x})", pt_handle);
+        debug_info_level!(3,"ekcapi_pt_destroy({:x})", pt_handle);
         
         if pt_handle == 0 {
             debug_error!("Cannot destroy pt [0]");
@@ -466,7 +466,7 @@ nkapi!{
 nkapi!{
     fn nkapi_alloc(pt_handle: usize, root_vpn: VirtPageNum, size: usize, 
         map_type_u: usize, perm: MapPermission) -> PhysPageNum{
-        debug_info_level!(3,"nkapi_alloc({:x}, {:x}, {:x}, {:x}, {:?}({:x}))", pt_handle, root_vpn.0, size, map_type_u, perm, perm.bits());
+        debug_info_level!(3,"ekcapi_alloc({:x}, {:x}, {:x}, {:x}, {:?}({:x}))", pt_handle, root_vpn.0, size, map_type_u, perm, perm.bits());
 
         let mut pte_perm = perm.clone();
         let map_type = MapType::from(map_type_u);
@@ -532,14 +532,14 @@ nkapi!{
             nkapi_return_ok!(first_ppn);
 
         });
-        debug_info!("nkapi_alloc: cannot find pagetable!");
+        debug_info!("ekcapi_alloc: cannot find pagetable!");
         nkapi_return_err!(1);
     }
 }
 
 nkapi!{
     fn nkapi_dealloc(pt_handle: usize, vpn_n: usize, size: usize){
-        debug_info_level!(3,"nkapi_dealloc({:x}, {:x}, {:x})", pt_handle, vpn_n, size);
+        debug_info_level!(3,"ekcapi_dealloc({:x}, {:x}, {:x})", pt_handle, vpn_n, size);
         
         pt_operate! (pt_handle, target_pt, {
             for offset in 0..size {
@@ -570,7 +570,7 @@ nkapi!{
     // while translating COW with write==True, it would start alloc and copy.
 
     fn nkapi_current_pt() -> usize {
-        debug_info_level!(3,"nkapi_current_pt()");
+        debug_info_level!(3,"ekcapi_current_pt()");
         
         nkapi_return_ok!(pt_current());
     }
@@ -580,7 +580,7 @@ nkapi!{
     // while translating COW with write==True, it would start alloc and copy.
 
     fn nkapi_translate(pt_handle: usize, vpn: VirtPageNum, write: usize) -> PhysPageNum {
-        //debug_info_level!(3,"nkapi_translate({:x}, {:x}, {:x})", pt_handle, vpn.0, write);
+        //debug_info_level!(3,"ekcapi_translate({:x}, {:x}, {:x})", pt_handle, vpn.0, write);
         
         let write = write!=0;
         pt_operate! (pt_handle, target_pt, {
@@ -608,7 +608,7 @@ nkapi!{
 
 nkapi!{
     fn nkapi_translate_va(pt_handle: usize, va: VirtAddr) -> PhysAddr{
-        //debug_info_level!(3,"nkapi_translate_va({:x}, {:x})", pt_handle, va.0);
+        //debug_info_level!(3,"ekcapi_translate_va({:x}, {:x})", pt_handle, va.0);
         
         pt_operate! (pt_handle, target_pt, {
             if let Some(pa) = target_pt.translate_va(va){
@@ -621,7 +621,7 @@ nkapi!{
 
 nkapi!{
     fn nkapi_get_pte(pt_handle: usize, vpn: VirtPageNum) -> PageTableEntry{
-        debug_info_level!(3,"nkapi_get_pte({:x}, {:x})", pt_handle, vpn.0);
+        debug_info_level!(3,"ekcapi_get_pte({:x}, {:x})", pt_handle, vpn.0);
         
         pt_operate! (pt_handle, target_pt, {
             if let Some(pte) = target_pt.find_pte(vpn) {
@@ -636,12 +636,12 @@ nkapi!{
 
 nkapi!{
     fn nkapi_write(pt_handle: usize, vpn: VirtPageNum, data_ptr: usize, offset:usize){
-        debug_info_level!(3,"nkapi_write({:x}, {:x}, {:x}, {:x})", pt_handle, vpn.0, data_ptr, offset);
+        debug_info_level!(3,"ekcapi_write({:x}, {:x}, {:x}, {:x})", pt_handle, vpn.0, data_ptr, offset);
         
         unsafe{
             let result: (usize, usize) = nkapi_translate_va(pt_current(), data_ptr.into());
             if result.1 == 0 {
-                debug_info_level!(0, "nkapi_write begin.");
+                debug_info_level!(0, "ekcapi_write begin.");
                 let former_pa = PhysAddr(result.0);
                 pt_operate! (pt_handle, target_pt, {
                     let data = &*(former_pa.0 as *const usize as *mut [u8; PAGE_SIZE]);
@@ -673,7 +673,7 @@ nkapi!{
                 debug_info_level!(0, "nkapi write finish.");
                 nkapi_return_ok!();
             }else{
-                debug_info_level!(5,"nkapi_write: not found.");
+                debug_info_level!(5,"ekcapi_write: not found.");
                 nkapi_return_err!(1);
             }
         }
@@ -682,7 +682,7 @@ nkapi!{
 
 nkapi!{
     fn nkapi_activate(pt_handle: usize){
-        debug_info_level!(3,"nkapi_activate({:x})", pt_handle);
+        debug_info_level!(3,"ekcapi_activate({:x})", pt_handle);
         
         pt_operate! (pt_handle, target_pt, {
             let satp = target_pt.token();

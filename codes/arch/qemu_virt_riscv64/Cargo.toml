@@ -8,7 +8,7 @@ edition = "2018"
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 spin = "0.7.0"
 bitflags = "1.2.1"
-riscv = { git = "https://github.com/rust-embedded/riscv.git"}
+riscv = { git = "https://github.com/rust-embedded/riscv.git", version = "0.13.0"}
 # mmi = { version = "0.1.9", git = "https://github.com/MemoryManagementKernel/mmi_rust.git"}
 mmi = { path= "../../dependency/mmi"}
 [features]
